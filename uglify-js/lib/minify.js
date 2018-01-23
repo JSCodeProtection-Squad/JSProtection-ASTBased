@@ -459,6 +459,26 @@ function functionFlatten(fs, function_item) {
   return result;
 }
 
+function flatten(fs, bodies) {
+  if (typeof bodies !== 'object') {
+    return bodies;
+  } else {
+    for (var name in bodies) {
+      if (bodies.hasOwnProperty(name) === true) {
+        if (bodies[name] !== null && typeof bodies[name] != 'undefined') {
+          if (bodies[name].start.value === 'while') {
+            bodies[name] = whileFlatten(fs, bodies[name]);
+          } else if (bodies[name].start.value === 'function') {
+            bodies[name] = functionFlatten(fs, bodies[name]);
+          }
+          
+          bodies[name] = flatten(fs, bodies[name])
+        }
+      }
+    }
+  }
+}
+
 function minify(fs, files, options) {
   var warn_function = AST_Node.warn_function;
   try {
@@ -543,16 +563,7 @@ function minify(fs, files, options) {
         options.parse.filename = name;
         options.parse.toplevel = parse(files[name], options.parse);
         
-        
-        options.parse.toplevel.body.forEach(function (item, index) {
-          //应该使用递归
-          if (item.start.value === 'while') {
-            //可以使用在while上，更可以使用在整个文件上
-            options.parse.toplevel.body[index] = whileFlatten(fs, item);
-          } else if (item.start.value === 'function') {
-            options.parse.toplevel.body[index] = functionFlatten(fs, item);
-          }
-        });
+        options.parse.toplevel.body = flatten(fs, options.parse.toplevel.body);
         
         if (options.sourceMap && options.sourceMap.content == "inline") {
           if (Object.keys(files).length > 1)
