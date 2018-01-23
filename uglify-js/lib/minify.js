@@ -57,50 +57,60 @@ function to_json(cache) {
 // }
 
 function whileFlatten(fs, while_item) {
-  var code = fs.readFileSync('./test/template.js', 'utf8');
-  var result = parse(code);
+  var code = fs.readFileSync('./template/while.js', 'utf8');
+  var result = parse(code).body[0];
   var length = while_item.body.body.length + 1;
   
-  result.body.forEach(function (item, index) {
-    if (item.start.value === 'for') {
-      result = item;
-      
-      //根据模板改写AST_NODE，假定行数列数不影响结果
-      var if_ast_condition = result.body.body[0].condition;
-      if_ast_condition.right.end.raw = length.toString();
-      if_ast_condition.right.end.value = length;
-      if_ast_condition.right.start.raw = length.toString();
-      if_ast_condition.right.start.value = length;
-      if_ast_condition.right.value = length;
-      // //switch
-      var switch_ast = result.body.body[1];
-      switch_ast.body[0].body[0].condition = while_item.condition;
-      
-      var first_if_final = switch_ast.body[0].body[0].alternative.body[0].body;
-      first_if_final.end.raw = length.toString();
-      first_if_final.end.value = length;
-      first_if_final.right.end.raw = length.toString();
-      first_if_final.right.end.value = length;
-      first_if_final.right.start.raw = length.toString();
-      first_if_final.right.start.value = length;
-      first_if_final.right.value = length;
-      
-      while_item.body.body.forEach(function (while_body, index) {
-        //创建新的case节点，否则会遭遇deep clone问题，比较蛋疼
-        
-        var temp = new AST_Case({
+  //根据模板改写AST_NODE，假定行数列数不影响结果
+  var if_ast_condition = result.body.body[0].condition;
+  if_ast_condition.right.end.raw = length.toString();
+  if_ast_condition.right.end.value = length;
+  if_ast_condition.right.start.raw = length.toString();
+  if_ast_condition.right.start.value = length;
+  if_ast_condition.right.value = length;
+  // //switch
+  var switch_ast = result.body.body[1];
+  switch_ast.body[0].body[0].condition = while_item.condition;
+  
+  var first_if_final = switch_ast.body[0].body[0].alternative.body[0].body;
+  first_if_final.end.raw = length.toString();
+  first_if_final.end.value = length;
+  first_if_final.right.end.raw = length.toString();
+  first_if_final.right.end.value = length;
+  first_if_final.right.start.raw = length.toString();
+  first_if_final.right.start.value = length;
+  first_if_final.right.value = length;
+  
+  while_item.body.body.forEach(function (while_body, index) {
+    //创建新的case节点，否则会遭遇deep clone问题，比较蛋疼
+    
+    var temp = new AST_Case({
+      end: new AST_Token({
+        raw: undefined,
+        file: null,
+        comments_after: [],
+        comments_before: [],
+        nlb: false,
+        value: ';',
+        type: 'punc'
+      }),
+      start: new AST_Token({
+        raw: undefined,
+        file: null,
+        comments_after: [],
+        comments_before: [],
+        nlb: true,
+        value: 'case',
+        type: 'keyword'
+      }),
+      body: [
+        new AST_StatementWithBody({
           end: new AST_Token({
             raw: undefined,
             file: null,
             comments_after: [],
             comments_before: [],
             nlb: false,
-            endpos: 344,
-            endcol: 12,
-            endline: 21,
-            pos: 343,
-            col: 11,
-            line: 21,
             value: ';',
             type: 'punc'
           }),
@@ -110,241 +120,149 @@ function whileFlatten(fs, while_item) {
             comments_after: [],
             comments_before: [],
             nlb: true,
-            endpos: 312,
-            endcol: 8,
-            endline: 19,
-            pos: 308,
-            col: 4,
-            line: 19,
-            value: 'case',
-            type: 'keyword'
+            value: 'next',
+            type: 'name'
           }),
-          body: [
-            new AST_StatementWithBody({
-              end: new AST_Token({
-                raw: undefined,
-                file: null,
-                comments_after: [],
-                comments_before: [],
-                nlb: false,
-                endpos: 331,
-                endcol: 15,
-                endline: 20,
-                pos: 330,
-                col: 14,
-                line: 20,
-                value: ';',
-                type: 'punc'
-              }),
-              start: new AST_Token({
-                raw: undefined,
-                file: null,
-                comments_after: [],
-                comments_before: [],
-                nlb: true,
-                endpos: 326,
-                endcol: 10,
-                endline: 20,
-                pos: 322,
-                col: 6,
-                line: 20,
-                value: 'next',
-                type: 'name'
-              }),
-              body: new AST_Assign({
-                end: new AST_Token({
-                  raw: '1',
-                  file: null,
-                  comments_after: [],
-                  comments_before: [],
-                  nlb: false,
-                  endpos: 330,
-                  endcol: 14,
-                  endline: 20,
-                  pos: 329,
-                  col: 13,
-                  line: 20,
-                  value: 1,
-                  type: 'num'
-                }),
-                start: new AST_Token({
-                  raw: undefined,
-                  file: null,
-                  comments_after: [],
-                  comments_before: [],
-                  nlb: true,
-                  endpos: 326,
-                  endcol: 10,
-                  endline: 20,
-                  pos: 322,
-                  col: 6,
-                  line: 20,
-                  value: 'next',
-                  type: 'name'
-                }),
-                right: new AST_Number({
-                  end: new AST_Token({
-                    raw: '1',
-                    file: null,
-                    comments_after: [],
-                    comments_before: [],
-                    nlb: false,
-                    endpos: 330,
-                    endcol: 14,
-                    endline: 20,
-                    pos: 329,
-                    col: 13,
-                    line: 20,
-                    value: 1,
-                    type: 'num'
-                  }),
-                  start: new AST_Token({
-                    raw: '1',
-                    file: null,
-                    comments_after: [],
-                    comments_before: [],
-                    nlb: false,
-                    endpos: 330,
-                    endcol: 14,
-                    endline: 20,
-                    pos: 329,
-                    col: 13,
-                    line: 20,
-                    value: 1,
-                    type: 'num'
-                  }),
-                  value: 1
-                }),
-                left: new AST_Symbol({
-                  end: new AST_Token({
-                    raw: undefined,
-                    file: null,
-                    comments_after: [],
-                    comments_before: [],
-                    nlb: true,
-                    endpos: 326,
-                    endcol: 10,
-                    endline: 20,
-                    pos: 322,
-                    col: 6,
-                    line: 20,
-                    value: 'next',
-                    type: 'name'
-                  }),
-                  start: new AST_Token({
-                    raw: undefined,
-                    file: null,
-                    comments_after: [],
-                    comments_before: [],
-                    nlb: true,
-                    endpos: 326,
-                    endcol: 10,
-                    endline: 20,
-                    pos: 322,
-                    col: 6,
-                    line: 20,
-                    value: 'next',
-                    type: 'name'
-                  }),
-                  name: 'next'
-                }),
-                operator: '='
-              })
-            }),
-            new AST_Break({
-              end: new AST_Token({
-                raw: undefined,
-                file: null,
-                comments_after: [],
-                comments_before: [],
-                nlb: false,
-                endpos: 344,
-                endcol: 12,
-                endline: 21,
-                pos: 343,
-                col: 11,
-                line: 21,
-                value: ';',
-                type: 'punc'
-              }),
-              start: new AST_Token({
-                raw: undefined,
-                file: null,
-                comments_after: [],
-                comments_before: [],
-                nlb: true,
-                endpos: 343,
-                endcol: 11,
-                endline: 21,
-                pos: 338,
-                col: 6,
-                line: 21,
-                value: 'break',
-                type: 'keyword'
-              }),
-              label: null
-            })
-          ],
-          expression: new AST_Number({
+          body: new AST_Assign({
             end: new AST_Token({
               raw: '1',
               file: null,
               comments_after: [],
               comments_before: [],
               nlb: false,
-              endpos: 314,
-              endcol: 10,
-              endline: 19,
-              pos: 313,
-              col: 9,
-              line: 19,
               value: 1,
               type: 'num'
             }),
             start: new AST_Token({
-              raw: '1',
+              raw: undefined,
               file: null,
               comments_after: [],
               comments_before: [],
-              nlb: false,
-              endpos: 314,
-              endcol: 10,
-              endline: 19,
-              pos: 313,
-              col: 9,
-              line: 19,
-              value: 1,
-              type: 'num'
+              nlb: true,
+              value: 'next',
+              type: 'name'
             }),
-            value: 1
+            right: new AST_Number({
+              end: new AST_Token({
+                raw: '1',
+                file: null,
+                comments_after: [],
+                comments_before: [],
+                nlb: false,
+                value: 1,
+                type: 'num'
+              }),
+              start: new AST_Token({
+                raw: '1',
+                file: null,
+                comments_after: [],
+                comments_before: [],
+                nlb: false,
+                value: 1,
+                type: 'num'
+              }),
+              value: 1
+            }),
+            left: new AST_Symbol({
+              end: new AST_Token({
+                raw: undefined,
+                file: null,
+                comments_after: [],
+                comments_before: [],
+                nlb: true,
+                value: 'next',
+                type: 'name'
+              }),
+              start: new AST_Token({
+                raw: undefined,
+                file: null,
+                comments_after: [],
+                comments_before: [],
+                nlb: true,
+                value: 'next',
+                type: 'name'
+              }),
+              name: 'next'
+            }),
+            operator: '='
           })
-        });
-        temp.expression.end.raw = (1 + index).toString();
-        temp.expression.end.value = 1 + index;
-        temp.expression.start.raw = (1 + index).toString();
-        temp.expression.start.value = 1 + index;
-        temp.expression.value = 1 + index;
-        
-        var num = 2 + index;
-        if (index == while_item.body.body.length - 1) {
-          //此处为动态找自构不透明谓词词典
-          num = 0;
-        }
-        temp.body[0].body.end.raw = num.toString();
-        temp.body[0].body.end.value = num;
-        temp.body[0].body.right.end.raw = num.toString();
-        temp.body[0].body.right.end.value = num;
-        temp.body[0].body.right.start.raw = num.toString();
-        temp.body[0].body.right.start.value = num;
-        temp.body[0].body.right.value = num;
-        
-        temp.body.unshift(while_body);
-        switch_ast.body.push(temp);
-      });
+        }),
+        new AST_Break({
+          end: new AST_Token({
+            raw: undefined,
+            file: null,
+            comments_after: [],
+            comments_before: [],
+            nlb: false,
+            value: ';',
+            type: 'punc'
+          }),
+          start: new AST_Token({
+            raw: undefined,
+            file: null,
+            comments_after: [],
+            comments_before: [],
+            nlb: true,
+            value: 'break',
+            type: 'keyword'
+          }),
+          label: null
+        })
+      ],
+      expression: new AST_Number({
+        end: new AST_Token({
+          raw: '1',
+          file: null,
+          comments_after: [],
+          comments_before: [],
+          nlb: false,
+          value: 1,
+          type: 'num'
+        }),
+        start: new AST_Token({
+          raw: '1',
+          file: null,
+          comments_after: [],
+          comments_before: [],
+          nlb: false,
+          value: 1,
+          type: 'num'
+        }),
+        value: 1
+      })
+    });
+    temp.expression.end.raw = (1 + index).toString();
+    temp.expression.end.value = 1 + index;
+    temp.expression.start.raw = (1 + index).toString();
+    temp.expression.start.value = 1 + index;
+    temp.expression.value = 1 + index;
+    
+    var num = 2 + index;
+    if (index == while_item.body.body.length - 1) {
+      //此处为动态找自构不透明谓词词典
+      num = 0;
     }
+    temp.body[0].body.end.raw = num.toString();
+    temp.body[0].body.end.value = num;
+    temp.body[0].body.right.end.raw = num.toString();
+    temp.body[0].body.right.end.value = num;
+    temp.body[0].body.right.start.raw = num.toString();
+    temp.body[0].body.right.start.value = num;
+    temp.body[0].body.right.value = num;
+    
+    temp.body.unshift(while_body);
+    switch_ast.body.push(temp);
   });
   
   return result;
+}
+
+function functionFlatten(fs, function_item) {
+  var code = fs.readFileSync('./template/function.js', 'utf8');
+  var result = parse(code).body[0];
+  // var length = function_item.body.body.length + 1;
+  
+  // return result;
 }
 
 function minify(fs, files, options) {
@@ -433,8 +351,12 @@ function minify(fs, files, options) {
         
         
         options.parse.toplevel.body.forEach(function (item, index) {
+          //应该使用递归
           if (item.start.value === 'while') {
+            //可以使用在while上，更可以使用在整个文件上
             options.parse.toplevel.body[index] = whileFlatten(fs, item);
+          } else if (item.start.value === 'function') {
+            options.parse.toplevel.body[index] = functionFlatten(fs, item);
           }
         });
         
