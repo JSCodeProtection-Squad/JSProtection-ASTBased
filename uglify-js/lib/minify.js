@@ -56,63 +56,64 @@ function to_json(cache) {
 //   return return_obj;
 // }
 
-function whileFlatten(fs, while_item) {
-  var code = fs.readFileSync('./template/while.js', 'utf8');
-  var result = parse(code).body[0];
-  var length = while_item.body.body.length + 1;
-  
-  //根据模板改写AST_NODE，假定行数列数不影响结果
-  var if_ast_condition = result.body.body[0].condition;
-  if_ast_condition.right.end.raw = length.toString();
-  if_ast_condition.right.end.value = length;
-  if_ast_condition.right.start.raw = length.toString();
-  if_ast_condition.right.start.value = length;
-  if_ast_condition.right.value = length;
-  // //switch
-  var switch_ast = result.body.body[1];
-  switch_ast.body[0].body[0].condition = while_item.condition;
-  
-  var first_if_final = switch_ast.body[0].body[0].alternative.body[0].body;
-  first_if_final.end.raw = length.toString();
-  first_if_final.end.value = length;
-  first_if_final.right.end.raw = length.toString();
-  first_if_final.right.end.value = length;
-  first_if_final.right.start.raw = length.toString();
-  first_if_final.right.start.value = length;
-  first_if_final.right.value = length;
-  
-  while_item.body.body.forEach(function (while_body, index) {
-    //创建新的case节点，否则会遭遇deep clone问题，比较蛋疼
-    
-    var temp = new AST_Case({
-      end: new AST_Token({
-        raw: undefined,
-        file: null,
-        comments_after: [],
-        comments_before: [],
-        nlb: false,
-        value: ';',
-        type: 'punc'
-      }),
-      start: new AST_Token({
-        raw: undefined,
-        file: null,
-        comments_after: [],
-        comments_before: [],
-        nlb: true,
-        value: 'case',
-        type: 'keyword'
-      }),
-      body: [
-        new AST_StatementWithBody({
+function changeAST_NodeAssign(obj, value) {
+  obj.end.raw = value.toString();
+  obj.end.value = value;
+  obj.start.raw = value.toString();
+  obj.start.value = value;
+  obj.value = value;
+  return obj;
+}
+
+function createWhileCase() {
+  return new AST_Case({
+    end: new AST_Token({
+      raw: undefined,
+      file: null,
+      comments_after: [],
+      comments_before: [],
+      nlb: false,
+      value: ';',
+      type: 'punc'
+    }),
+    start: new AST_Token({
+      raw: undefined,
+      file: null,
+      comments_after: [],
+      comments_before: [],
+      nlb: true,
+      value: 'case',
+      type: 'keyword'
+    }),
+    body: [
+      new AST_StatementWithBody({
+        end: new AST_Token({
+          raw: undefined,
+          file: null,
+          comments_after: [],
+          comments_before: [],
+          nlb: false,
+          value: ';',
+          type: 'punc'
+        }),
+        start: new AST_Token({
+          raw: undefined,
+          file: null,
+          comments_after: [],
+          comments_before: [],
+          nlb: true,
+          value: 'next',
+          type: 'name'
+        }),
+        body: new AST_Assign({
           end: new AST_Token({
-            raw: undefined,
+            raw: '1',
             file: null,
             comments_after: [],
             comments_before: [],
             nlb: false,
-            value: ';',
-            type: 'punc'
+            value: 1,
+            type: 'num'
           }),
           start: new AST_Token({
             raw: undefined,
@@ -123,7 +124,7 @@ function whileFlatten(fs, while_item) {
             value: 'next',
             type: 'name'
           }),
-          body: new AST_Assign({
+          right: new AST_Number({
             end: new AST_Token({
               raw: '1',
               file: null,
@@ -134,6 +135,18 @@ function whileFlatten(fs, while_item) {
               type: 'num'
             }),
             start: new AST_Token({
+              raw: '1',
+              file: null,
+              comments_after: [],
+              comments_before: [],
+              nlb: false,
+              value: 1,
+              type: 'num'
+            }),
+            value: 1
+          }),
+          left: new AST_Symbol({
+            end: new AST_Token({
               raw: undefined,
               file: null,
               comments_after: [],
@@ -142,60 +155,115 @@ function whileFlatten(fs, while_item) {
               value: 'next',
               type: 'name'
             }),
-            right: new AST_Number({
-              end: new AST_Token({
-                raw: '1',
-                file: null,
-                comments_after: [],
-                comments_before: [],
-                nlb: false,
-                value: 1,
-                type: 'num'
-              }),
-              start: new AST_Token({
-                raw: '1',
-                file: null,
-                comments_after: [],
-                comments_before: [],
-                nlb: false,
-                value: 1,
-                type: 'num'
-              }),
-              value: 1
+            start: new AST_Token({
+              raw: undefined,
+              file: null,
+              comments_after: [],
+              comments_before: [],
+              nlb: true,
+              value: 'next',
+              type: 'name'
             }),
-            left: new AST_Symbol({
-              end: new AST_Token({
-                raw: undefined,
-                file: null,
-                comments_after: [],
-                comments_before: [],
-                nlb: true,
-                value: 'next',
-                type: 'name'
-              }),
-              start: new AST_Token({
-                raw: undefined,
-                file: null,
-                comments_after: [],
-                comments_before: [],
-                nlb: true,
-                value: 'next',
-                type: 'name'
-              }),
-              name: 'next'
-            }),
-            operator: '='
-          })
+            name: 'next'
+          }),
+          operator: '='
+        })
+      }),
+      new AST_Break({
+        end: new AST_Token({
+          raw: undefined,
+          file: null,
+          comments_after: [],
+          comments_before: [],
+          nlb: false,
+          value: ';',
+          type: 'punc'
         }),
-        new AST_Break({
+        start: new AST_Token({
+          raw: undefined,
+          file: null,
+          comments_after: [],
+          comments_before: [],
+          nlb: true,
+          value: 'break',
+          type: 'keyword'
+        }),
+        label: null
+      })
+    ],
+    expression: new AST_Number({
+      end: new AST_Token({
+        raw: '1',
+        file: null,
+        comments_after: [],
+        comments_before: [],
+        nlb: false,
+        value: 1,
+        type: 'num'
+      }),
+      start: new AST_Token({
+        raw: '1',
+        file: null,
+        comments_after: [],
+        comments_before: [],
+        nlb: false,
+        value: 1,
+        type: 'num'
+      }),
+      value: 1
+    })
+  });
+}
+
+function createFunctionCase() {
+  return new AST_Case({
+    end: new AST_Token({
+      raw: undefined,
+      file: null,
+      comments_after: [],
+      comments_before: [],
+      nlb: false,
+      value: ';',
+      type: 'punc'
+    }),
+    start: new AST_Token({
+      raw: undefined,
+      file: null,
+      comments_after: [],
+      comments_before: [],
+      nlb: true,
+      value: 'case',
+      type: 'keyword'
+    }),
+    body: [
+      new AST_StatementWithBody({
+        end: new AST_Token({
+          raw: undefined,
+          file: null,
+          comments_after: [],
+          comments_before: [],
+          nlb: false,
+          value: ';',
+          type: 'punc'
+        }),
+        start: new AST_Token({
+          raw: undefined,
+          file: null,
+          comments_after: [],
+          comments_before: [],
+          nlb: true,
+          value: 'this',
+          type: 'name'
+        }),
+        body: new AST_Assign({
           end: new AST_Token({
-            raw: undefined,
+            raw: '1',
             file: null,
             comments_after: [],
             comments_before: [],
             nlb: false,
-            value: ';',
-            type: 'punc'
+            value: 1,
+            type: 'num'
           }),
           start: new AST_Token({
             raw: undefined,
@@ -203,39 +271,138 @@ function whileFlatten(fs, while_item) {
             comments_after: [],
             comments_before: [],
             nlb: true,
-            value: 'break',
-            type: 'keyword'
+            value: 'this',
+            type: 'name'
           }),
-          label: null
+          right: new AST_Number({
+            end: new AST_Token({
+              raw: '1',
+              file: null,
+              comments_after: [],
+              comments_before: [],
+              nlb: false,
+              value: 1,
+              type: 'num'
+            }),
+            start: new AST_Token({
+              raw: '1',
+              file: null,
+              comments_after: [],
+              comments_before: [],
+              nlb: false,
+              value: 1,
+              type: 'num'
+            }),
+            value: 1
+          }),
+          left: new AST_PropAccess({
+            end: new AST_Token({
+              file: null,
+              comments_after: [],
+              comments_before: [],
+              nlb: false,
+              value: 'next',
+              type: 'name'
+            }),
+            start: new AST_Token({
+              file: null,
+              comments_after: [],
+              comments_before: [],
+              nlb: true,
+              value: 'this',
+              type: 'name'
+            }),
+            property: 'next',
+            expression: new AST_Symbol({
+              end: new AST_Token({
+                file: null,
+                comments_after: [],
+                comments_before: [],
+                nlb: true,
+                value: 'this',
+                type: 'name'
+              }),
+              start: new AST_Token({
+                file: null,
+                comments_after: [],
+                comments_before: [],
+                nlb: true,
+                value: 'this',
+                type: 'name'
+              }),
+              name: 'this'
+            })
+          }),
+          operator: '='
         })
-      ],
-      expression: new AST_Number({
+      }),
+      new AST_Break({
         end: new AST_Token({
-          raw: '1',
+          raw: undefined,
           file: null,
           comments_after: [],
           comments_before: [],
           nlb: false,
-          value: 1,
-          type: 'num'
+          value: ';',
+          type: 'punc'
         }),
         start: new AST_Token({
-          raw: '1',
+          raw: undefined,
           file: null,
           comments_after: [],
           comments_before: [],
-          nlb: false,
-          value: 1,
-          type: 'num'
+          nlb: true,
+          value: 'break',
+          type: 'keyword'
         }),
-        value: 1
+        label: null
       })
-    });
-    temp.expression.end.raw = (1 + index).toString();
-    temp.expression.end.value = 1 + index;
-    temp.expression.start.raw = (1 + index).toString();
-    temp.expression.start.value = 1 + index;
-    temp.expression.value = 1 + index;
+    ],
+    expression: new AST_Number({
+      end: new AST_Token({
+        raw: '1',
+        file: null,
+        comments_after: [],
+        comments_before: [],
+        nlb: false,
+        value: 1,
+        type: 'num'
+      }),
+      start: new AST_Token({
+        raw: '1',
+        file: null,
+        comments_after: [],
+        comments_before: [],
+        nlb: false,
+        value: 1,
+        type: 'num'
+      }),
+      value: 1
+    })
+  });
+}
+
+function whileFlatten(fs, while_item) {
+  var code = fs.readFileSync('./template/while.js', 'utf8');
+  var result = parse(code).body[0];
+  var length = while_item.body.body.length + 1;
+  
+  var if_ast_condition = result.body.body[0].condition;
+  if_ast_condition.right = changeAST_NodeAssign(if_ast_condition.right, length)
+  
+  var switch_ast = result.body.body[1];
+  switch_ast.body[0].body[0].condition = while_item.condition;
+  
+  var first_if_final = switch_ast.body[0].body[0].alternative.body[0].body;
+  first_if_final.end.raw = length.toString();
+  first_if_final.end.value = length;
+  first_if_final.right = changeAST_NodeAssign(first_if_final.right, length);
+  
+  while_item.body.body.forEach(function (while_body, index) {
+    //创建新的case节点，否则会遭遇deep clone问题，比较蛋疼
+    
+    var temp = createWhileCase();
+    temp.expression = changeAST_NodeAssign(temp.expression, 1 + index);
     
     var num = 2 + index;
     if (index == while_item.body.body.length - 1) {
@@ -244,11 +411,7 @@ function whileFlatten(fs, while_item) {
     }
     temp.body[0].body.end.raw = num.toString();
     temp.body[0].body.end.value = num;
-    temp.body[0].body.right.end.raw = num.toString();
-    temp.body[0].body.right.end.value = num;
-    temp.body[0].body.right.start.raw = num.toString();
-    temp.body[0].body.right.start.value = num;
-    temp.body[0].body.right.value = num;
+    temp.body[0].body.right = changeAST_NodeAssign(temp.body[0].body.right, num);
     
     temp.body.unshift(while_body);
     switch_ast.body.push(temp);
@@ -260,9 +423,40 @@ function whileFlatten(fs, while_item) {
 function functionFlatten(fs, function_item) {
   var code = fs.readFileSync('./template/function.js', 'utf8');
   var result = parse(code).body[0];
-  // var length = function_item.body.body.length + 1;
   
-  // return result;
+  var definitions = result.definitions[0];
+  definitions.start.value = function_item.name.name;
+  definitions.name.end.value = function_item.name.name;
+  definitions.name.start.value = function_item.name.name;
+  definitions.name.name = function_item.name.name;
+  
+  var func = definitions.value;
+  func.argnames = function_item.argnames;
+  //for循环
+  var func_body = func.body[1];
+  var length = function_item.body.length + 1;
+  
+  var if_ast_condition = func_body.body.body[0].condition;
+  if_ast_condition.right = changeAST_NodeAssign(if_ast_condition.right, length);
+  
+  var switch_ast = func_body.body.body[1];
+  function_item.body.forEach(function (function_body, index) {
+    //创建新的case节点，否则会遭遇deep clone问题，比较蛋疼
+    
+    var temp = createWhileCase();
+    temp.expression = changeAST_NodeAssign(temp.expression, 1 + index);
+    
+    var num = 2 + index;
+    
+    temp.body[0].body.end.raw = num.toString();
+    temp.body[0].body.end.value = num;
+    temp.body[0].body.right = changeAST_NodeAssign(temp.body[0].body.right, num);
+    
+    temp.body.unshift(function_body);
+    switch_ast.body.push(temp);
+  });
+  
+  return result;
 }
 
 function minify(fs, files, options) {

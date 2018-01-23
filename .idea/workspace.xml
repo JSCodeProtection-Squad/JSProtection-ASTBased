@@ -1,18 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="afccc806-fbed-425f-a0af-b8fb50c47e7e" name="Default" comment="[老峻峻][JS代码保护-基于AST]添加README.md文件">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/template/else_if.js" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/template/for.js" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/template/for_in.js" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/template/function.js" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/template/var.js" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/template/while.js" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/test/template.js" afterPath="" />
+    <list default="true" id="afccc806-fbed-425f-a0af-b8fb50c47e7e" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/routes/index.js" afterPath="$PROJECT_DIR$/routes/index.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/template/function.js" afterPath="$PROJECT_DIR$/template/function.js" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/test.js" afterPath="$PROJECT_DIR$/test/test.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/uglify-js/lib/compress.js" afterPath="$PROJECT_DIR$/uglify-js/lib/compress.js" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/uglify-js/lib/minify.js" afterPath="$PROJECT_DIR$/uglify-js/lib/minify.js" />
     </list>
     <ignored path="$PROJECT_DIR$/.tmp/" />
@@ -32,34 +24,40 @@
   <component name="ExecutionTargetManager" SELECTED_TARGET="default_target" />
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="index.js" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/routes/index.js">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="330">
-              <caret line="22" column="0" lean-forward="true" selection-start-line="22" selection-start-column="0" selection-end-line="22" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
       <file leaf-file-name="function.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/template/function.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="180">
-              <caret line="14" column="1" lean-forward="false" selection-start-line="14" selection-start-column="1" selection-end-line="14" selection-end-column="1" />
-              <folding />
+            <state relative-caret-position="195">
+              <caret line="15" column="2" lean-forward="true" selection-start-line="15" selection-start-column="2" selection-end-line="15" selection-end-column="2" />
+              <folding>
+                <element signature="e#0#43#0" expanded="false" />
+              </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="minify.js" pinned="false" current-in-tab="false">
+      <file leaf-file-name="minify.js" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/uglify-js/lib/minify.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="177">
-              <caret line="264" column="0" lean-forward="false" selection-start-line="264" selection-start-column="0" selection-end-line="264" selection-end-column="0" />
+            <state relative-caret-position="681">
+              <caret line="441" column="42" lean-forward="false" selection-start-line="441" selection-start-column="42" selection-end-line="441" selection-end-column="42" />
               <folding>
+                <element signature="e#1812#5291#0" expanded="false" />
+                <element signature="e#4371#4842#0" expanded="false" />
+                <element signature="e#4882#5286#0" expanded="false" />
+                <element signature="n#!!block;n#createFunctionCase#0" expanded="false" />
+                <element signature="e#5376#5531#0" expanded="false" />
+                <element signature="e#5559#5719#0" expanded="false" />
+                <element signature="e#5795#5982#0" expanded="false" />
+                <element signature="e#6014#6203#0" expanded="false" />
+                <element signature="e#6266#6460#0" expanded="false" />
+                <element signature="e#6494#6699#0" expanded="false" />
+                <element signature="e#6734#7258#0" expanded="false" />
+                <element signature="e#6767#6977#0" expanded="false" />
+                <element signature="e#7013#7223#0" expanded="false" />
+                <element signature="e#8427#8898#0" expanded="false" />
+                <element signature="e#8938#9342#0" expanded="false" />
                 <element signature="n#!!block;n#whileFlatten#0" expanded="false" />
-                <element signature="e#2725#6496#0" expanded="false" />
               </folding>
             </state>
           </provider>
@@ -92,9 +90,10 @@
       <find>compress</find>
       <find>references</find>
       <find>case</find>
-      <find>thedef</find>
       <find>comment</find>
       <find>comments_before</find>
+      <find>thedef</find>
+      <find>property</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -129,11 +128,11 @@
         <option value="$PROJECT_DIR$/template/for.js" />
         <option value="$PROJECT_DIR$/template/var.js" />
         <option value="$PROJECT_DIR$/template/else_if.js" />
-        <option value="$PROJECT_DIR$/template/function.js" />
         <option value="$PROJECT_DIR$/template/while.js" />
-        <option value="$PROJECT_DIR$/routes/index.js" />
         <option value="$PROJECT_DIR$/test/test.js" />
+        <option value="$PROJECT_DIR$/routes/index.js" />
         <option value="$PROJECT_DIR$/uglify-js/lib/minify.js" />
+        <option value="$PROJECT_DIR$/template/function.js" />
       </list>
     </option>
   </component>
@@ -247,6 +246,20 @@
               <option name="myItemType" value="com.jetbrains.php.projectView.PhpTreeStructureProvider$1" />
             </PATH_ELEMENT>
           </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="JSProtection-ASTBased" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="JSProtection-ASTBased" />
+              <option name="myItemType" value="com.jetbrains.php.projectView.PhpTreeStructureProvider$1" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="routes" />
+              <option name="myItemType" value="com.jetbrains.php.projectView.PhpTreeStructureProvider$1" />
+            </PATH_ELEMENT>
+          </PATH>
         </subPane>
       </pane>
     </panes>
@@ -257,7 +270,7 @@
     <property name="nodejs_interpreter_path" value="node" />
     <property name="javascript.nodejs.core.library.configured.version" value="8.9.4" />
     <property name="HbShouldOpenHtmlAsHb" value="" />
-    <property name="SearchEverywhereHistoryKey" value="index&#9;FILE&#9;file:///Users/leegend/Downloads/JSProtection-ASTBased/routes/index.js&#10;inde&#9;FILE&#9;file:///Users/leegend/Downloads/JSProtection-ASTBased/routes/index.js&#10;minify&#9;FILE&#9;file:///Users/leegend/Downloads/JSProtection-ASTBased/uglify-js/lib/minify.js&#10;tem&#9;FILE&#9;file:///Users/leegend/Downloads/JSProtection-ASTBased/test/template.js&#10;parse&#9;FILE&#9;file:///Users/leegend/Downloads/JSProtection-ASTBased/uglify-js/lib/parse.js&#10;reduce_vars&#9;null&#9;null&#10;mini&#9;FILE&#9;file:///Users/leegend/Downloads/JSProtection-ASTBased/uglify-js/lib/minify.js&#10;index.js&#9;FILE&#9;file://C:/Users/Lee/WebstormProjects/JSProtection-ASTBased/routes/index.js" />
+    <property name="SearchEverywhereHistoryKey" value="index&#9;FILE&#9;file:///Users/leegend/Downloads/JSProtection-ASTBased/routes/index.js&#10;test&#9;FILE&#9;file:///Users/leegend/Downloads/JSProtection-ASTBased/test/test.js&#10;inde&#9;FILE&#9;file:///Users/leegend/Downloads/JSProtection-ASTBased/routes/index.js&#10;minify&#9;FILE&#9;file:///Users/leegend/Downloads/JSProtection-ASTBased/uglify-js/lib/minify.js&#10;tem&#9;FILE&#9;file:///Users/leegend/Downloads/JSProtection-ASTBased/test/template.js&#10;parse&#9;FILE&#9;file:///Users/leegend/Downloads/JSProtection-ASTBased/uglify-js/lib/parse.js&#10;reduce_vars&#9;null&#9;null&#10;mini&#9;FILE&#9;file:///Users/leegend/Downloads/JSProtection-ASTBased/uglify-js/lib/minify.js&#10;index.js&#9;FILE&#9;file://C:/Users/Lee/WebstormProjects/JSProtection-ASTBased/routes/index.js" />
     <property name="settings.editor.selected.configurable" value="preferences.editor" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="FullScreen" value="true" />
@@ -371,7 +384,7 @@
       <workItem from="1516506661625" duration="12230000" />
       <workItem from="1516537475968" duration="1315000" />
       <workItem from="1516538880353" duration="25175000" />
-      <workItem from="1516692735185" duration="9580000" />
+      <workItem from="1516692735185" duration="26168000" />
     </task>
     <task id="LOCAL-00001" summary="[老峻峻][JS代码保护-基于AST]添加README.md文件">
       <created>1514987811754</created>
@@ -387,11 +400,18 @@
       <option name="project" value="LOCAL" />
       <updated>1516638066819</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="[老峻峻][JS代码保护-基于AST]half">
+      <created>1516703891464</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1516703891464</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="74814000" />
+    <option name="totallyTimeSpent" value="91402000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="0" width="1280" height="800" extended-state="6" />
@@ -401,9 +421,10 @@
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3780822" sideWeight="0.503231" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
       <window_info id="npm" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.3780822" sideWeight="0.49676898" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.4287671" sideWeight="0.49676898" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3298611" sideWeight="0.5" order="12" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="true" content_ui="tabs" />
@@ -420,7 +441,6 @@
       <window_info id="Salesforce" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="15" side_tool="false" content_ui="tabs" />
       <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Log Manager" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="14" side_tool="false" content_ui="tabs" />
     </layout>
   </component>
@@ -433,14 +453,15 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="[老峻峻][JS代码保护-基于AST]添加README.md文件" />
     <MESSAGE value="[老峻峻][JS代码保护-基于AST][while循环]控制流平坦化初步完成(待优化&amp;抽象)" />
-    <option name="LAST_COMMIT_MESSAGE" value="[老峻峻][JS代码保护-基于AST][while循环]控制流平坦化初步完成(待优化&amp;抽象)" />
+    <MESSAGE value="[老峻峻][JS代码保护-基于AST]half" />
+    <option name="LAST_COMMIT_MESSAGE" value="[老峻峻][JS代码保护-基于AST]half" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints-dialog>
         <breakpoints-dialog />
       </breakpoints-dialog>
-      <option name="time" value="16" />
+      <option name="time" value="18" />
     </breakpoint-manager>
     <watches-manager />
   </component>
@@ -648,6 +669,7 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="234">
           <caret line="70" column="0" lean-forward="false" selection-start-line="70" selection-start-column="0" selection-end-line="70" selection-end-column="0" />
+          <folding />
         </state>
       </provider>
     </entry>
@@ -688,14 +710,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="132">
           <caret line="333" column="24" lean-forward="true" selection-start-line="333" selection-start-column="24" selection-end-line="333" selection-end-column="24" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/uglify-js/lib/ast.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="46">
-          <caret line="849" column="2" lean-forward="false" selection-start-line="849" selection-start-column="2" selection-end-line="849" selection-end-column="2" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -813,44 +827,68 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/template/while.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="210">
-          <caret line="16" column="1" lean-forward="true" selection-start-line="16" selection-start-column="1" selection-end-line="16" selection-end-column="1" />
+        <state relative-caret-position="90">
+          <caret line="8" column="11" lean-forward="true" selection-start-line="8" selection-start-column="11" selection-end-line="8" selection-end-column="11" />
           <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/uglify-js/lib/minify.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="177">
-          <caret line="264" column="0" lean-forward="false" selection-start-line="264" selection-start-column="0" selection-end-line="264" selection-end-column="0" />
-          <folding>
-            <element signature="n#!!block;n#whileFlatten#0" expanded="false" />
-            <element signature="e#2725#6496#0" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/test/test.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="105">
-          <caret line="7" column="1" lean-forward="false" selection-start-line="7" selection-start-column="1" selection-end-line="7" selection-end-column="1" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/template/function.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="180">
-          <caret line="14" column="1" lean-forward="false" selection-start-line="14" selection-start-column="1" selection-end-line="14" selection-end-column="1" />
+        <state relative-caret-position="165">
+          <caret line="11" column="11" lean-forward="true" selection-start-line="11" selection-start-column="11" selection-end-line="11" selection-end-column="11" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/routes/index.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="330">
-          <caret line="22" column="0" lean-forward="true" selection-start-line="22" selection-start-column="0" selection-end-line="22" selection-end-column="0" />
+        <state relative-caret-position="180">
+          <caret line="12" column="0" lean-forward="true" selection-start-line="12" selection-start-column="0" selection-end-line="12" selection-end-column="0" />
           <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/uglify-js/lib/ast.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="6960">
+          <caret line="670" column="40" lean-forward="false" selection-start-line="670" selection-start-column="32" selection-end-line="670" selection-end-column="40" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/template/function.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="195">
+          <caret line="15" column="2" lean-forward="true" selection-start-line="15" selection-start-column="2" selection-end-line="15" selection-end-column="2" />
+          <folding>
+            <element signature="e#0#43#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/uglify-js/lib/minify.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="681">
+          <caret line="441" column="42" lean-forward="false" selection-start-line="441" selection-start-column="42" selection-end-line="441" selection-end-column="42" />
+          <folding>
+            <element signature="e#1812#5291#0" expanded="false" />
+            <element signature="e#4371#4842#0" expanded="false" />
+            <element signature="e#4882#5286#0" expanded="false" />
+            <element signature="n#!!block;n#createFunctionCase#0" expanded="false" />
+            <element signature="e#5376#5531#0" expanded="false" />
+            <element signature="e#5559#5719#0" expanded="false" />
+            <element signature="e#5795#5982#0" expanded="false" />
+            <element signature="e#6014#6203#0" expanded="false" />
+            <element signature="e#6266#6460#0" expanded="false" />
+            <element signature="e#6494#6699#0" expanded="false" />
+            <element signature="e#6734#7258#0" expanded="false" />
+            <element signature="e#6767#6977#0" expanded="false" />
+            <element signature="e#7013#7223#0" expanded="false" />
+            <element signature="e#8427#8898#0" expanded="false" />
+            <element signature="e#8938#9342#0" expanded="false" />
+            <element signature="n#!!block;n#whileFlatten#0" expanded="false" />
+          </folding>
         </state>
       </provider>
     </entry>
