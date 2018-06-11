@@ -1,11 +1,11 @@
 "use strict";
 
 var to_ascii = typeof atob == "undefined" ? function (b64) {
-    return new Buffer(b64, "base64").toString();
-  } : atob;
+  return new Buffer(b64, "base64").toString();
+} : atob;
 var to_base64 = typeof btoa == "undefined" ? function (str) {
-    return new Buffer(str).toString("base64");
-  } : btoa;
+  return new Buffer(str).toString("base64");
+} : btoa;
 
 function read_source_map(code) {
   var match = /\n\/\/# sourceMappingURL=data:application\/json(;.*?)?;base64,(.*)/.exec(code);
@@ -386,24 +386,24 @@ function whileFlatten(fs, while_item) {
   var code = fs.readFileSync('./template/while.js', 'utf8');
   var result = parse(code).body[0];
   var length = while_item.body.body.length + 1;
-  
+
   var if_ast_condition = result.body.body[0].condition;
   if_ast_condition.right = changeAST_NodeAssign(if_ast_condition.right, length)
-  
+
   var switch_ast = result.body.body[1];
   switch_ast.body[0].body[0].condition = while_item.condition;
-  
+
   var first_if_final = switch_ast.body[0].body[0].alternative.body[0].body;
   first_if_final.end.raw = length.toString();
   first_if_final.end.value = length;
   first_if_final.right = changeAST_NodeAssign(first_if_final.right, length);
-  
+
   while_item.body.body.forEach(function (while_body, index) {
     //创建新的case节点，否则会遭遇deep clone问题，比较蛋疼
-    
+
     var temp = createWhileCase();
     temp.expression = changeAST_NodeAssign(temp.expression, 1 + index);
-    
+
     var num = 2 + index;
     if (index == while_item.body.body.length - 1) {
       //此处为动态找自构不透明谓词词典
@@ -412,71 +412,51 @@ function whileFlatten(fs, while_item) {
     temp.body[0].body.end.raw = num.toString();
     temp.body[0].body.end.value = num;
     temp.body[0].body.right = changeAST_NodeAssign(temp.body[0].body.right, num);
-    
+
     temp.body.unshift(while_body);
     switch_ast.body.push(temp);
   });
-  
+
   return result;
 }
 
 function functionFlatten(fs, function_item) {
   var code = fs.readFileSync('./template/function.js', 'utf8');
   var result = parse(code).body[0];
-  
+
   var definitions = result.definitions[0];
   definitions.start.value = function_item.name.name;
   definitions.name.end.value = function_item.name.name;
   definitions.name.start.value = function_item.name.name;
   definitions.name.name = function_item.name.name;
-  
+
   var func = definitions.value;
   func.argnames = function_item.argnames;
   //for循环
   var func_body = func.body[1];
   var length = function_item.body.length + 1;
-  
+
   var if_ast_condition = func_body.body.body[0].condition;
   if_ast_condition.right = changeAST_NodeAssign(if_ast_condition.right, length);
-  
+
   var switch_ast = func_body.body.body[1];
   function_item.body.forEach(function (function_body, index) {
     //创建新的case节点，否则会遭遇deep clone问题，比较蛋疼
-    
+
     var temp = createWhileCase();
     temp.expression = changeAST_NodeAssign(temp.expression, 1 + index);
-    
+
     var num = 2 + index;
-    
+
     temp.body[0].body.end.raw = num.toString();
     temp.body[0].body.end.value = num;
     temp.body[0].body.right = changeAST_NodeAssign(temp.body[0].body.right, num);
-    
+
     temp.body.unshift(function_body);
     switch_ast.body.push(temp);
   });
-  
-  return result;
-}
 
-function flatten(fs, bodies) {
-  if (typeof bodies !== 'object') {
-    return bodies;
-  } else {
-    for (var name in bodies) {
-      if (bodies.hasOwnProperty(name) === true) {
-        if (bodies[name] !== null && typeof bodies[name] != 'undefined') {
-          if (bodies[name].start.value === 'while') {
-            bodies[name] = whileFlatten(fs, bodies[name]);
-          } else if (bodies[name].start.value === 'function') {
-            bodies[name] = functionFlatten(fs, bodies[name]);
-          }
-          
-          bodies[name] = flatten(fs, bodies[name])
-        }
-      }
-    }
-  }
+  return result;
 }
 
 function minify(fs, files, options) {
@@ -498,8 +478,8 @@ function minify(fs, files, options) {
       wrap: false,
     }, true);
     var timings = options.timings && {
-        start: Date.now()
-      };
+      start: Date.now()
+    };
     if (options.rename === undefined) {
       options.rename = options.compress && options.mangle;
     }
@@ -562,9 +542,18 @@ function minify(fs, files, options) {
       for (var name in files) if (HOP(files, name)) {
         options.parse.filename = name;
         options.parse.toplevel = parse(files[name], options.parse);
-        
-        options.parse.toplevel.body = flatten(fs, options.parse.toplevel.body);
-        
+
+
+        options.parse.toplevel.body.forEach(function (item, index) {
+          //应该使用递归
+          if (item.start.value === 'while') {
+            //可以使用在while上，更可以使用在整个文件上
+            options.parse.toplevel.body[index] = whileFlatten(fs, item);
+          } else if (item.start.value === 'function') {
+            options.parse.toplevel.body[index] = functionFlatten(fs, item);
+          }
+        });
+
         if (options.sourceMap && options.sourceMap.content == "inline") {
           if (Object.keys(files).length > 1)
             throw new Error("inline source map only works with singular input");

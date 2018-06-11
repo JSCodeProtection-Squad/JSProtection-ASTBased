@@ -1,9 +1,9 @@
-function test(test1, test2) {
-  var temp = test1;
-  var t = test2;
-  
-  return temp ? t : t - 1;
-}
+// function test(test1, test2) {
+//   var temp = test1;
+//   var t = test2;
+//
+//   return temp ? t : t - 1;
+// }
 var i = 0;
 while (i < 10) {
   i++;
