@@ -43,6 +43,10 @@
 
 "use strict";
 
+/**
+ * 将str分割为单个字符的列表
+ * @param {string} str 需要分割的字符串
+ */
 function characters(str) {
     return str.split("");
 };
@@ -67,6 +71,10 @@ function repeat_string(str, i) {
     return d;
 };
 
+/**
+ * 配置异常栈
+ * @param {Function} fn 异常构造函数
+ */
 function configure_error_stack(fn) {
     Object.defineProperty(fn.prototype, "stack", {
         get: function() {
@@ -94,6 +102,12 @@ DefaultsError.croak = function(msg, defs) {
     throw new DefaultsError(msg, defs);
 };
 
+/**
+ * 使用默认配置补全源配置
+ * @param {Object} args 源配置
+ * @param {Object} defs 默认配置
+ * @param {Boolean} croak 当源配置中存在默认配置中不存在的配置项时，是否报错
+ */
 function defaults(args, defs, croak) {
     if (args === true)
         args = {};
@@ -212,6 +226,10 @@ function mergeSort(array, cmp) {
 
 // this function is taken from Acorn [1], written by Marijn Haverbeke
 // [1] https://github.com/marijnh/acorn
+/**
+ * 生成一个函数，用于判断str是否在关键字列表中
+ * @param {array or strin } words 字符串列表或者字符串
+ */
 function makePredicate(words) {
     if (!(words instanceof Array)) words = words.split(" ");
     var f = "", cats = [];
@@ -256,6 +274,11 @@ function makePredicate(words) {
     return new Function("str", f);
 };
 
+/**
+ * 检测array中的每一个元素是否都满足predicate的判断方法
+ * @param {*} array 
+ * @param {*} predicate 判断方法
+ */
 function all(array, predicate) {
     for (var i = array.length; --i >= 0;)
         if (!predicate(array[i]))

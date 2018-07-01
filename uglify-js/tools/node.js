@@ -15,9 +15,13 @@ var FILES = UglifyJS.FILES = [
     "../lib/minify.js",
     "./exports.js",
 ].map(function(file){
+    // 返回所有模块的绝对路径
     return require.resolve(file);
 });
 
+/**
+ * 所有模块文件wrapped到一个函数中，并且按照exports.js文件中的字典导出必要模块
+ */
 new Function("MOZ_SourceMap", "exports", function() {
     var code = FILES.map(function(file) {
         return fs.readFileSync(file, "utf8");

@@ -106,9 +106,9 @@ var OPERATORS = makePredicate([
     "&&",
     "||"
 ]);
-
+// 创建空白符预测函数
 var WHITESPACE_CHARS = makePredicate(characters(" \u00a0\n\r\t\f\u000b\u200b\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u2028\u2029\u202f\u205f\u3000\uFEFF"));
-
+// 创建换行符预测函数
 var NEWLINE_CHARS = makePredicate(characters("\n\r\u2028\u2029"));
 
 var PUNC_BEFORE_EXPRESSION = makePredicate(characters("[{(,;:"));
@@ -144,10 +144,20 @@ function is_surrogate_pair_tail(code) {
     return code >= 0xdc00 && code <= 0xdfff;
 }
 
+/**
+ * 判断是否是数字
+ * @param {UNICODE} code Unicode编码
+ * @returns boolean
+ */
 function is_digit(code) {
     return code >= 48 && code <= 57;
 };
 
+/**
+ * 判断是否为数字或者字母
+ * @param {UNICODE} code 字符的Unicode编码
+ * @returns boolean
+ */
 function is_alphanumeric_char(code) {
     return is_digit(code) || is_letter(code);
 };
@@ -168,10 +178,19 @@ function is_identifier(name) {
     return !RESERVED_WORDS(name) && /^[a-z_$][a-z0-9_$]*$/i.test(name);
 };
 
+/**
+ * 判断是否为标识符
+ * @param {UNICODE} code 字符Unicode编码
+ */
 function is_identifier_start(code) {
+    // 以，$ ，_ ，字母开头为标识符
     return code == 36 || code == 95 || is_letter(code);
 };
 
+/**
+ * 验证ch是否符合标识符字符
+ * @param {char} ch 字符
+ */
 function is_identifier_char(ch) {
     var code = ch.charCodeAt(0);
     return is_identifier_start(code)
@@ -188,6 +207,10 @@ function is_identifier_string(str){
     return /^[a-z_$][a-z0-9_$]*$/i.test(str);
 };
 
+/**
+ * 利用正则匹配解析数字
+ * @param {string} num 数字串
+ */
 function parse_js_number(num) {
     if (RE_HEX_NUMBER.test(num)) {
         return parseInt(num.substr(2), 16);
@@ -199,6 +222,14 @@ function parse_js_number(num) {
     }
 };
 
+/**
+ * 异常构造函数
+ * @param {String} message 异常消息
+ * @param {string} filename 抛出异常的文件
+ * @param {int} line 行号
+ * @param {int} col 列号
+ * @param {int} pos 位置
+ */
 function JS_Parse_Error(message, filename, line, col, pos) {
     this.message = message;
     this.filename = filename;
@@ -211,43 +242,83 @@ JS_Parse_Error.prototype.constructor = JS_Parse_Error;
 JS_Parse_Error.prototype.name = "SyntaxError";
 configure_error_stack(JS_Parse_Error);
 
+/**
+ * 抛出一个解析异常
+ * @param {*} message 
+ * @param {*} filename 
+ * @param {*} line 
+ * @param {*} col 
+ * @param {*} pos 
+ */
 function js_error(message, filename, line, col, pos) {
     throw new JS_Parse_Error(message, filename, line, col, pos);
 };
 
+/**
+ * 判断token的类型和值
+ * @param {AST_Token} token 需要判断的token
+ * @param {string} type token 类型
+ * @param {string} val token 值
+ * @returns boolean
+ */
 function is_token(token, type, val) {
     return token.type == type && (val == null || token.value == val);
 };
 
 var EX_EOF = {};
 
+/**
+ * 词法分析器，创建一个读取token的函数，每次向前读取一个token
+ * @param {string} $TEXT 代码字符串
+ * @param {string} filename 文件名
+ * @param {boolean} html5_comments 是否解析html5注释
+ * @param {*} shebang 
+ */
 function tokenizer($TEXT, filename, html5_comments, shebang) {
 
     var S = {
         text            : $TEXT,
         filename        : filename,
-        pos             : 0,
-        tokpos          : 0,
+        pos             : 0,    // 词法分析器当前解析的字符位置
+        tokpos          : 0,    // token的第一个字符在代码中的位置
         line            : 1,
         tokline         : 0,
         col             : 0,
         tokcol          : 0,
         newline_before  : false,
+        // 在某些符号或者关键字后边才能出现正则表达式！
+        // 需要有标志位标记是否读取正则的token
         regex_allowed   : false,
         comments_before : [],
+        // 指示字符串字典，记录每个指示字符串出现的次数
         directives      : {},
+        // 指示字符串栈，每个栈帧保存一个作用域内的所有指示字符串
         directive_stack : []
     };
 
+    /**
+     * 返回当前位置的字符
+     */
     function peek() { return S.text.charAt(S.pos); };
 
+    /**
+     * 读取当前字符，并将S状态更新：
+     * S.pos,S.line,S.col,S.newline_before
+     * .newline_before只有当处理的内容既不是作为字符串，当前S.newline_before为false时取false
+     * @param {boolean} signal_eof 检测到换行符是否报错
+     * @param {boolean} in_string 是否在处理字符串
+     * @returns 当前字符
+     */
     function next(signal_eof, in_string) {
         var ch = S.text.charAt(S.pos++);
         if (signal_eof && !ch)
             throw EX_EOF;
-        if (NEWLINE_CHARS(ch)) {
+        if (NEWLINE_CHARS(ch)) {    // 如果是一个换行符
+            // S.newline_before只有当处理的内容既不是作为字符串，S.newline_before为false是取false
             S.newline_before = S.newline_before || !in_string;
+            // 行号更新
             ++S.line;
+            // 列号清零
             S.col = 0;
             if (!in_string && ch == "\r" && peek() == "\n") {
                 // treat a \r\n sequence as a single \n
@@ -260,38 +331,71 @@ function tokenizer($TEXT, filename, html5_comments, shebang) {
         return ch;
     };
 
+    /**
+     * 向前跳过i个字符
+     * @param {int} i 向前跳过的字符个数
+     */
     function forward(i) {
         while (i-- > 0) next();
     };
 
+    /**
+     * 在代码文件中查找指定的子串，只判断是否查到
+     * @param {string} str 寻找的字符串
+     * @returns boolean
+     */
     function looking_at(str) {
         return S.text.substr(S.pos, str.length) == str;
     };
 
+    /**
+     * 从当前位置开始查找下一个换行符
+     * 返回换行符的位置，如果找不到返回-1
+     */
     function find_eol() {
         var text = S.text;
         for (var i = S.pos, n = S.text.length; i < n; ++i) {
             var ch = text[i];
-            if (NEWLINE_CHARS(ch))
+            if (NEWLINE_CHARS(ch))  // 判断是否为换行符
                 return i;
         }
         return -1;
     };
 
+    /**
+     * 在代码字串中从当前位置开始查找what子串
+     * 返回查找到的首位置
+     * @param {string} what 要查找的字符串
+     * @param {boolean} signal_eof 没查找到时是否抛出异常
+     * @returns int
+     */
     function find(what, signal_eof) {
         var pos = S.text.indexOf(what, S.pos);
         if (signal_eof && pos == -1) throw EX_EOF;
         return pos;
     };
 
+    /**
+     * 开始读取token时对状态变量S进行一些初始化
+     * 把当前的行号，列号，字符在代码文件中的位置赋值给token的对应信息
+     */
     function start_token() {
         S.tokline = S.line;
         S.tokcol = S.col;
         S.tokpos = S.pos;
     };
-
+    // 前一个字符是否是成员运算符'.'
     var prev_was_dot = false;
+
+    /**
+     * 创建一个AST_Token
+     * @param {string} type token 类型
+     * @param {string} value token的值
+     * @param {boolean} is_comment 是否是注释
+     */
     function token(type, value, is_comment) {
+        // 判断是否允许正则表达式
+        // 根据当前解析得到的token类型，判断之后的解析过程中是否允许匹配正则表达式
         S.regex_allowed = ((type == "operator" && !UNARY_POSTFIX(value)) ||
                            (type == "keyword" && KEYWORDS_BEFORE_EXPRESSION(value)) ||
                            (type == "punc" && PUNC_BEFORE_EXPRESSION(value)));
@@ -300,6 +404,7 @@ function tokenizer($TEXT, filename, html5_comments, shebang) {
         } else if (!is_comment) {
             prev_was_dot = false;
         }
+        // 读取token信息
         var ret = {
             type    : type,
             value   : value,
@@ -315,7 +420,8 @@ function tokenizer($TEXT, filename, html5_comments, shebang) {
         if (/^(?:num|string|regexp)$/i.test(type)) {
             ret.raw = $TEXT.substring(ret.pos, ret.endpos);
         }
-        if (!is_comment) {
+        if (!is_comment) {  //  如果该token不是注释，将token之前的注释保存到ret中
+                            //  将S状态变量中用于保存注释的域清空，并将其引用赋值给ret中保存token之后注释的域中
             ret.comments_before = S.comments_before;
             ret.comments_after = S.comments_before = [];
         }
@@ -323,11 +429,20 @@ function tokenizer($TEXT, filename, html5_comments, shebang) {
         return new AST_Token(ret);
     };
 
+    /**
+     * 跳过从当前位置开始的所有空白符
+     * \r\n\t\f都属于空白符
+     * 会更新S状态变量
+     */
     function skip_whitespace() {
         while (WHITESPACE_CHARS(peek()))
             next();
     };
 
+    /**
+     * 创建一个读取循环，根据pred和当前字符ch决定循环是否结束
+     * @param {Function} pred 字符读取循环函数
+     */
     function read_while(pred) {
         var ret = "", ch, i = 0;
         while ((ch = peek()) && pred(ch, i++))
@@ -335,40 +450,61 @@ function tokenizer($TEXT, filename, html5_comments, shebang) {
         return ret;
     };
 
+    /**
+     * 创建一个解析异常
+     * @param {string} err 错误消息
+     */
     function parse_error(err) {
         js_error(err, filename, S.tokline, S.tokcol, S.tokpos);
     };
 
+    /**
+     * 解析数字字串
+     * @param {char} prefix 数字前缀
+     */
     function read_num(prefix) {
         var has_e = false, after_e = false, has_x = false, has_dot = prefix == ".";
         var num = read_while(function(ch, i){
             var code = ch.charCodeAt(0);
             switch (code) {
+                // 只能出现一个 xX
               case 120: case 88: // xX
                 return has_x ? false : (has_x = true);
+                // 如果没有 xX，只能有一个 eE
               case 101: case 69: // eE
                 return has_x ? true : has_e ? false : (has_e = after_e = true);
+                // 如果不是在 eE之后，且也不是第一个数字，没有前缀，则停止读取
               case 45: // -
                 return after_e || (i == 0 && !prefix);
+                // + 只能出现在 eE后面
               case 43: // +
                 return after_e;
+                // 小数点 . 只能出现在 xX eE之前，且只能有一个
               case (after_e = false, 46): // .
                 return (!has_dot && !has_x && !has_e) ? (has_dot = true) : false;
             }
+            // 只能是数字和字母
             return is_alphanumeric_char(code);
         });
         if (prefix) num = prefix + num;
+        // 如果是八进制数字，且为严格模式，抛出异常
         if (RE_OCT_NUMBER.test(num) && next_token.has_directive("use strict")) {
             parse_error("Legacy octal literals are not allowed in strict mode");
         }
         var valid = parse_js_number(num);
         if (!isNaN(valid)) {
+            // 如果数字合法，创建数字token
             return token("num", valid);
         } else {
+            // 数字不合法，抛出异常
             parse_error("Invalid syntax: " + num);
         }
     };
 
+    /**
+     * 解析转义字符
+     * @param {boolean} in_string 是否正在处理字符串
+     */
     function read_escaped_char(in_string) {
         var ch = next(true, in_string);
         switch (ch.charCodeAt(0)) {
@@ -379,7 +515,7 @@ function tokenizer($TEXT, filename, html5_comments, shebang) {
           case 118 : return "\u000b"; // \v
           case 102 : return "\f";
           case 120 : return String.fromCharCode(hex_bytes(2)); // \x
-          case 117 : return String.fromCharCode(hex_bytes(4)); // \u
+          case 117 : return String.fromCharCode(hex_bytes(4)); // \u 表示一个Unicode编码，解析后面的编码
           case 10  : return ""; // newline
           case 13  :            // \r
             if (peek() == "\n") { // DOS newline
@@ -388,6 +524,7 @@ function tokenizer($TEXT, filename, html5_comments, shebang) {
             }
         }
         if (ch >= "0" && ch <= "7")
+            // 处理八进制转义字符
             return read_octal_escape_sequence(ch);
         return ch;
     };
@@ -408,6 +545,10 @@ function tokenizer($TEXT, filename, html5_comments, shebang) {
         return String.fromCharCode(parseInt(ch, 8));
     }
 
+    /**
+     * 读取n位16进制数，并转换为十进制整数
+     * @param {int} n 16进制位数
+     */
     function hex_bytes(n) {
         var num = 0;
         for (; n > 0; --n) {
@@ -419,38 +560,60 @@ function tokenizer($TEXT, filename, html5_comments, shebang) {
         return num;
     };
 
+    /**
+     * 创建一个具有异常处理的字符串解析函数
+     * @returns string类型的token
+     */
     var read_string = with_eof_error("Unterminated string constant", function(quote_char){
+        // 读取当前的引号，并移动字符坐标
         var quote = next(), ret = "";
+        // 处理字符串
         for (;;) {
             var ch = next(true, true);
+            // 处理转义字符
             if (ch == "\\") ch = read_escaped_char(true);
+            // 如果是换行符，抛出异常
             else if (NEWLINE_CHARS(ch)) parse_error("Unterminated string constant");
+            // 匹配到另一个配对的引号，结束
             else if (ch == quote) break;
             ret += ch;
         }
+        // 创建string 类型的token
         var tok = token("string", ret);
         tok.quote = quote_char;
         return tok;
     });
 
+    /**
+     * 解析注释，创建注释token，将其存放到S状态变量中
+     * @param {string} type 注释类别字符串
+     * @returns 返回值依旧是读取下一个token的函数
+     */
     function skip_line_comment(type) {
         var regex_allowed = S.regex_allowed;
+        // 查找下一个出现的换行符在代码中的位置pos
         var i = find_eol(), ret;
-        if (i == -1) {
-            ret = S.text.substr(S.pos);
-            S.pos = S.text.length;
-        } else {
-            ret = S.text.substring(S.pos, i);
-            S.pos = i;
+        if (i == -1) {  // 没有找到换行符
+            ret = S.text.substr(S.pos); // 将从当前位置开始的余下字符串赋值给ret
+            S.pos = S.text.length;  // 将词法分析处理的字符位置移动到字符串末尾
+        } else {    // 如果找到换行符
+            ret = S.text.substring(S.pos, i);   // 获取从当前位置到换行符的子串，不包含换行符
+            S.pos = i;  //移动当前字符位置
         }
+        // 更新当前的列号
         S.col = S.tokcol + (S.pos - S.tokpos);
+        // 创建注释的token并将其存入S状态变量中用于保存token前注释的域中
         S.comments_before.push(token(type, ret, true));
         S.regex_allowed = regex_allowed;
         return next_token;
     };
 
+    /**
+     * 创建具有异常处理的多行注释解析函数
+     */
     var skip_multiline_comment = with_eof_error("Unterminated multiline comment", function(){
         var regex_allowed = S.regex_allowed;
+        //  查找从当前位置开始出现的首个"*/"，的第一个字符在代码中的位置pos
         var i = find("*/", true);
         var text = S.text.substring(S.pos, i).replace(/\r\n|\r|\u2028|\u2029/g, '\n');
         // update stream position
@@ -460,22 +623,30 @@ function tokenizer($TEXT, filename, html5_comments, shebang) {
         return next_token;
     });
 
+    /**
+     * 解析一个标识符
+     * @returns 标识符字符串
+     */
     function read_name() {
         var backslash = false, name = "", ch, escaped = false, hex;
-        while ((ch = peek()) != null) {
+        while ((ch = peek()) != null) { // 读取到非标识符字符或者字符串末尾结束
             if (!backslash) {
                 if (ch == "\\") escaped = backslash = true, next();
                 else if (is_identifier_char(ch)) name += next();
                 else break;
             }
             else {
+                // 反斜线'\'之后必须为字符'u'，表示一个Unicode编码，否则抛出异常
                 if (ch != "u") parse_error("Expecting UnicodeEscapeSequence -- uXXXX");
+                // 利用read_escaped_char()函数解析Unicode编码
                 ch = read_escaped_char();
+                // 如果该字符不符合标识符要求，抛出异常
                 if (!is_identifier_char(ch)) parse_error("Unicode char: " + ch.charCodeAt(0) + " is not valid in identifier");
                 name += ch;
                 backslash = false;
             }
         }
+        // 如果是关键字
         if (KEYWORDS(name) && escaped) {
             hex = name.charCodeAt(0).toString(16).toUpperCase();
             name = "\\u" + "0000".substr(hex.length) + hex + name.slice(1);
@@ -483,8 +654,14 @@ function tokenizer($TEXT, filename, html5_comments, shebang) {
         return name;
     };
 
+    /**
+     * 解析正则表达式
+     * 如果在匹配到下一个 "/" 之前，出现换行则抛出异常
+     * @returns 返回一个 regexp 类型的token，value为一个正则表达式对象
+     */
     var read_regexp = with_eof_error("Unterminated regular expression", function(source) {
         var prev_backslash = false, ch, in_class = false;
+        // 解析到下一个"/"时，结束循环
         while ((ch = next(true))) if (NEWLINE_CHARS(ch)) {
             parse_error("Unexpected line terminator");
         } else if (prev_backslash) {
@@ -503,7 +680,10 @@ function tokenizer($TEXT, filename, html5_comments, shebang) {
         } else {
             source += ch;
         }
+        // 正则表达式最后可以包含一个标识符g,i,m,u,y
         var mods = read_name();
+        // 尝试根据解析的正则表达文本source和匹配模式标识符flag
+        // 创建正则表达式对象
         try {
             var regexp = new RegExp(source, mods);
             regexp.raw_source = source;
@@ -513,49 +693,79 @@ function tokenizer($TEXT, filename, html5_comments, shebang) {
         }
     });
 
+    /**
+     * 解析操作符
+     * @param {string} prefix 操作符前缀
+     */
     function read_operator(prefix) {
         function grow(op) {
+            // 如果没有多余字符，解析结束
             if (!peek()) return op;
             var bigger = op + peek();
-            if (OPERATORS(bigger)) {
+            if (OPERATORS(bigger)) { // 如果加上新的字符依旧符合操作符条件，继续解析
                 next();
                 return grow(bigger);
-            } else {
+            } else {    // 如果加上新字符不符合，返回之前的op
                 return op;
             }
         };
         return token("operator", grow(prefix || next()));
     };
 
+    /**
+     * 处理反斜线 "/"
+     * 有可能是单行注释，多行注释开始
+     * 也可能是正则匹配开始
+     * 还可能是操作符
+     */
     function handle_slash() {
         next();
         switch (peek()) {
+            // 两个反斜线，行注释开头
           case "/":
             next();
             return skip_line_comment("comment1");
+            // "/*"，块注释开头
           case "*":
             next();
             return skip_multiline_comment();
         }
+        //
+        // 不是注释，则尝试正则匹配或者操作符
         return S.regex_allowed ? read_regexp("") : read_operator("/");
     };
 
+    /**
+     * 当遇到 . 时，处理方法
+     */
     function handle_dot() {
         next();
         return is_digit(peek().charCodeAt(0))
-            ? read_num(".")
-            : token("punc", ".");
+            ? read_num(".") // 如果下一个字符是数字，则解析数字串
+            : token("punc", ".");   // 否则直接判定 . 为一个标点符号，创建type为punc的token
     };
 
+    /**
+     * 解析一个符合标识符命名规则的子串，创建对应的token
+     * @returns token
+     */
     function read_word() {
+        // 读取一个符合标识符命名规则的子串
         var word = read_name();
+        // 如果该子串前面是一个成员运算符 "."，则创建一个type为name的token
         if (prev_was_dot) return token("name", word);
+        // 判断子串的所属类型，标识符，运算符，关键字等。。。
         return KEYWORDS_ATOM(word) ? token("atom", word)
             : !KEYWORDS(word) ? token("name", word)
             : OPERATORS(word) ? token("operator", word)
             : token("keyword", word);
     };
 
+    /**
+     * 捕获目标函数抛出的不合理文件结束符异常
+     * @param {Error} eof_error 文件末尾异常
+     * @param {Function} cont 抛出异常的函数
+     */
     function with_eof_error(eof_error, cont) {
         return function(x) {
             try {
@@ -567,18 +777,27 @@ function tokenizer($TEXT, filename, html5_comments, shebang) {
         };
     };
 
+    /**
+     * 获取下一个token
+     * 注释会被忽略掉，不生成token
+     * @param {*} force_regexp 
+     */
     function next_token(force_regexp) {
         if (force_regexp != null)
             return read_regexp(force_regexp);
+        // 解析shebang脚本
         if (shebang && S.pos == 0 && looking_at("#!")) {
-            start_token();
-            forward(2);
-            skip_line_comment("comment5");
+            // shebang出现在脚本第一行，如果第一行一"#!"开始，则对后面的内容进行解析
+            start_token();  //初始化
+            forward(2);     //跳过两个字符，即是跳过"#!"
+            skip_line_comment("comment5"); // 解析注释，创建注释token
         }
         for (;;) {
+            // 跳过空白符
             skip_whitespace();
+            // 初始化
             start_token();
-            if (html5_comments) {
+            if (html5_comments) {   // 如果需要解析html5注释
                 if (looking_at("<!--")) {
                     forward(4);
                     skip_line_comment("comment3");
@@ -590,21 +809,32 @@ function tokenizer($TEXT, filename, html5_comments, shebang) {
                     continue;
                 }
             }
+            // 读取当前字符
             var ch = peek();
+            // 如果没有读取到字符，创建一个eof token并返回
             if (!ch) return token("eof");
+            // 获取字符的Unicode
             var code = ch.charCodeAt(0);
             switch (code) {
+              // 双引号 " 和单引号 ' 判断
               case 34: case 39: return read_string(ch);
+              // 成员运算符 "."
               case 46: return handle_dot();
+              // 反斜杠 /
               case 47: {
                   var tok = handle_slash();
+                  // 如果是注释，则会返回next_token
                   if (tok === next_token) continue;
                   return tok;
               }
             }
+            // 数字
             if (is_digit(code)) return read_num();
+            // 标点符号 "[]{}(),;:"
             if (PUNC_CHARS(ch)) return token("punc", next());
+            // 操作符符号" +-*&%=<>!?|~^"
             if (OPERATOR_CHARS(ch)) return read_operator();
+            // 如果是 "\"或者 符合标识符开头
             if (code == 92 || is_identifier_start(code)) return read_word();
             break;
         }
@@ -616,6 +846,11 @@ function tokenizer($TEXT, filename, html5_comments, shebang) {
         return S;
     };
 
+    /**
+     * 添加指示字符串directive到directive_stack栈顶栈帧中
+     * 同时，将directives字典更新，将对应指示字符串的数目增1
+     * @param {string} directive 指示字符串
+     */
     next_token.add_directive = function(directive) {
         S.directive_stack[S.directive_stack.length - 1].push(directive);
 
@@ -626,6 +861,9 @@ function tokenizer($TEXT, filename, html5_comments, shebang) {
         }
     }
 
+    /**
+     * 添加一个指示字符串栈帧，用于保存当前作用域内的所有指示字符串
+     */
     next_token.push_directives_stack = function() {
         S.directive_stack.push([]);
     }
@@ -640,6 +878,10 @@ function tokenizer($TEXT, filename, html5_comments, shebang) {
         S.directive_stack.pop();
     }
 
+    /**
+     * 检索directives字典中是否存在directive指示字符串
+     * @param {string} directive 指示字符串
+     */
     next_token.has_directive = function(directive) {
         return S.directives[directive] > 0;
     }
@@ -697,37 +939,63 @@ var ATOMIC_START_TOKEN = makePredicate([ "atom", "num", "string", "regexp", "nam
 function parse($TEXT, options) {
 
     options = defaults(options, {
-        bare_returns   : false,
-        expression     : false,
+        bare_returns   : false, //support top level return statements
+        expression     : false, //Pass true to preserve completion values from terminal statements without return, e.g. in bookmarklets.
         filename       : null,
         html5_comments : true,
-        shebang        : true,
+        shebang        : true,  //support #!command as the first line
         strict         : false,
         toplevel       : null,
     }, true);
 
     var S = {
+        // 输入：可以自己构造一个token输入器传递进来 否则就用tokenizer返回的next_token作为输入器
         input         : (typeof $TEXT == "string"
                          ? tokenizer($TEXT, options.filename,
                                      options.html5_comments, options.shebang)
                          : $TEXT),
+        // 当前token
         token         : null,
+        // 上一个token
         prev          : null,
-        peeked        : null,
+        // 向前看一个token
+        peeked        : null,   // 只有peek()函数会更新该值
+        // 函数嵌套层数
         in_function   : 0,
+        // 在函数里边标记"use strict"这种指示性字符串
         in_directives : true,
+        // 循环嵌套层数
         in_loop       : 0,
+        // labels集合
         labels        : []
     };
 
     S.token = next();
 
+    /**
+     * 判断当前的token是否为type类型，值为value
+     * @param {string} type token 类型
+     * @param {string} value token 值
+     * @returns boolean
+     */
     function is(type, value) {
         return is_token(S.token, type, value);
     };
 
+    /**
+     * 解析一个token
+     * 如果S.peeked为NULL，向前解析一个token，否则直接返回S.peeked
+     * 不会更新S.token，但是可能会更新S.peeked
+     * @returns 返回S.peeked
+     */
     function peek() { return S.peeked || (S.peeked = S.input()); };
 
+    /**
+     * 获取下一个token
+     * 会直接更新S.token，同时将其返回
+     * 同时，该函数始终保证S.peeked为null
+     * @returns 返回S.token
+     */
     function next() {
         S.prev = S.token;
         if (S.peeked) {
@@ -742,6 +1010,10 @@ function parse($TEXT, options) {
         return S.token;
     };
 
+    /**
+     * 返回前一个token
+     * @returns AST_Token
+     */
     function prev() {
         return S.prev;
     };
@@ -765,6 +1037,12 @@ function parse($TEXT, options) {
         token_error(token, "Unexpected token: " + token.type + " (" + token.value + ")");
     };
 
+    /**
+     * 判断当前token是否是指定token
+     * 如果不是抛出异常，否则，返回下一个token
+     * @param {string} type token类型
+     * @param {token} val token值
+     */
     function expect_token(type, val) {
         if (is(type, val)) {
             return next();
@@ -772,19 +1050,40 @@ function parse($TEXT, options) {
         token_error(S.token, "Unexpected token " + S.token.type + " «" + S.token.value + "»" + ", expected " + type + " «" + val + "»");
     };
 
+    /**
+     * 判断是否是指定的标点token，如果是返回下一个token
+     * 若不是，抛出异常
+     * @param {token} punc 标点token
+     */
     function expect(punc) { return expect_token("punc", punc); };
 
+    /**
+     * 判断该token之前是否存在换行
+     * 当token之前有一个换行，或者token之前的所有注释至少有一个注释
+     * 有换行时，返回true
+     * @param {token} token 一个词法单元
+     */
     function has_newline_before(token) {
         return token.nlb || !all(token.comments_before, function(comment) {
             return !comment.nlb;
         });
     }
 
+    /**
+     * 判断语句之后是否可以插入一个分号
+     * 如果语句之后为文件结束，或者是一个大括号“}”，
+     * 抑或者下一个token之前有换行（即语句之后换行）
+     */
     function can_insert_semicolon() {
         return !options.strict
             && (is("eof") || is("punc", "}") || has_newline_before(S.token));
     };
 
+    /**
+     * 判断语句之后有没有分号，如果没有分号，并且
+     * 分号是必须的，抛出异常
+     * @param {boolean} optional 分号是否是可选的
+     */
     function semicolon(optional) {
         if (is("punc", ";")) next();
         else if (!optional && !can_insert_semicolon()) unexpected();
@@ -808,9 +1107,19 @@ function parse($TEXT, options) {
         };
     };
 
+    /**
+     * 如果当前token为 "/" 或者 "/="
+     * 则强制解析正则表达式
+     * 得到的正则表达式token 的value是RegExp对象，其中包含了已经
+     * 解析得到的"/"或者"/="中，且这两个应该不属于"operator”Token
+     * 所以不用加入到AST中
+     * 此外，该方法直接更新S.token，将解析得到的token更新到当前取得的token
+     */
     function handle_regexp() {
         if (is("operator", "/") || is("operator", "/=")) {
             S.peeked = null;
+            // 空字符串 ""!= null 为 true
+            // 强制解析正则表达式
             S.token = S.input(S.token.value.substr(1)); // force regexp
         }
     };
@@ -818,14 +1127,17 @@ function parse($TEXT, options) {
     var statement = embed_tokens(function() {
         handle_regexp();
         switch (S.token.type) {
+            // 处理字符串类型token
           case "string":
-            if (S.in_directives) {
+            if (S.in_directives) {  // 如果是指示性字符串
                 var token = peek();
+                // 指示性字符串中没有 "\"
                 if (S.token.raw.indexOf("\\") == -1
                     && (is_token(token, "punc", ";")
                         || is_token(token, "punc", "}")
                         || has_newline_before(token)
                         || is_token(token, "eof"))) {
+                    // 将指示性字符串添加到词法分析器中的栈中
                     S.input.add_directive(S.token.value);
                 } else {
                     S.in_directives = false;
@@ -840,7 +1152,7 @@ function parse($TEXT, options) {
             return simple_statement();
 
           case "name":
-            return is_token(peek(), "punc", ":")
+            return is_token(peek(), "punc", ":") // 如果是冒号“：”，则是一个标签语句
                 ? labeled_statement()
                 : simple_statement();
 
@@ -944,6 +1256,7 @@ function parse($TEXT, options) {
                 next();
                 return try_();
 
+                // 解析变量定义语句
               case "var":
                 next();
                 var node = var_();
@@ -992,7 +1305,13 @@ function parse($TEXT, options) {
         return new AST_LabeledStatement({ body: stat, label: label });
     };
 
+    /**
+     * 解析一个表达式语句
+     * 类似 a = 1 + 2
+     * @param {*} tmp 
+     */
     function simple_statement(tmp) {
+        // 先解析表达式expression，然后是判断分号
         return new AST_SimpleStatement({ body: (tmp = expression(true), semicolon(), tmp) });
     };
 
@@ -1271,20 +1590,31 @@ function parse($TEXT, options) {
         return ret;
     };
 
+    /**
+     * 原子表达式
+     */
     var expr_atom = function(allow_calls) {
+        // 判断是否是new表达式
         if (is("operator", "new")) {
             return new_(allow_calls);
         }
         var start = S.token;
+        // 如果是标点
         if (is("punc")) {
             switch (start.value) {
+                // 括号表达式
               case "(":
                 next();
+                // 括号内的表达式
                 var ex = expression(true);
                 var len = start.comments_before.length;
+                // 括号内表达式中的注释，添加到整个括号达式的注释中
                 [].unshift.apply(ex.start.comments_before, start.comments_before);
                 start.comments_before = ex.start.comments_before;
                 start.comments_before_length = len;
+                // 如果左括号前面没有注释，且内部表达式中第一个注释之前没有换行
+                // 则将左括号前是否换行设置为false
+                // 括号内部表达式的第一个注释之前是否有换行设置右括号之前是否有换行
                 if (len == 0 && start.comments_before.length > 0) {
                     var comment = start.comments_before[0];
                     if (!comment.nlb) {
@@ -1292,14 +1622,24 @@ function parse($TEXT, options) {
                         start.nlb = false;
                     }
                 }
+                //  左括号之后的注释设置为内部表达式之后的注释
                 start.comments_after = ex.start.comments_after;
+                // 内部表达式的开始设置为函数名
                 ex.start = start;
+                // 匹配一个右括号，匹配不到则整个括号表达式不正确，抛出异常
                 expect(")");
+                // 表达式的结束为右括号
                 var end = prev();
+                // 右括号之前注释为内部表达式最后一个token
+                // 之前的注释
                 end.comments_before = ex.end.comments_before;
+                // 将内部表达式最后一个token之后的注释添加到
+                // 右括号之后的注释中
                 [].push.apply(ex.end.comments_after, end.comments_after);
                 end.comments_after = ex.end.comments_after;
                 ex.end = end;
+                // 内部表达式的结束设置为右括号
+                // 这样，整个内表达式变量代表整个括号表达式
                 if (ex instanceof AST_Call) mark_pure(ex);
                 return subscripts(ex, allow_calls);
               case "[":
@@ -1497,11 +1837,17 @@ function parse($TEXT, options) {
         return expr;
     };
 
+    /**
+     * 一元表达式解析
+     * @param {*} allow_calls 
+     */
     var maybe_unary = function(allow_calls) {
         var start = S.token;
+        //  如果当前token是操作符，并且是一元表达式前缀
         if (is("operator") && UNARY_PREFIX(start.value)) {
             next();
             handle_regexp();
+            // 递归解析一元表达式
             var ex = make_unary(AST_UnaryPrefix, start, maybe_unary(allow_calls));
             ex.start = start;
             ex.end = prev();
@@ -1555,6 +1901,10 @@ function parse($TEXT, options) {
         return expr_op(maybe_unary(true), 0, no_in);
     };
 
+    /**
+     * 条件表达式解析
+     * @param {*} no_in 
+     */
     var maybe_conditional = function(no_in) {
         var start = S.token;
         var expr = expr_ops(no_in);
@@ -1577,6 +1927,10 @@ function parse($TEXT, options) {
         return expr instanceof AST_PropAccess || expr instanceof AST_SymbolRef;
     };
 
+    /**
+     * 赋值表达式解析
+     * @param {*} no_in 
+     */
     var maybe_assign = function(no_in) {
         var start = S.token;
         var left = maybe_conditional(no_in), val = S.token.value;
@@ -1596,6 +1950,11 @@ function parse($TEXT, options) {
         return left;
     };
 
+    /**
+     * 表达式解析
+     * @param {*} commas 
+     * @param {*} no_in 
+     */
     var expression = function(commas, no_in) {
         var start = S.token;
         var exprs = [];
@@ -1624,8 +1983,10 @@ function parse($TEXT, options) {
     }
 
     return (function(){
+        // 在前面已经调用next()函数解析第一个token
         var start = S.token;
         var body = [];
+        // 解析完第一个token后添加一个指示字符串栈帧
         S.input.push_directives_stack();
         while (!is("eof"))
             body.push(statement());

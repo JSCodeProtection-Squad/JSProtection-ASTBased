@@ -1,32 +1,3 @@
-// // "23"
-// var init = 0;
-// init = init +1;
-// // function test(test1, test2) {
-// //   var temp = test1;
-// //   var t = test2;
-// //
-// //   return temp ? t : t - 1;
-// // }
-// var i = 0;
-// while (i < 10) {
-//   i++;
-//   i += 2;
-//   if (i !== 0) {
-//     i++;
-//     var j = i;
-//     j++;
-//   }
-// }
-// // i = 0;
-// // while (i < 5) {
-// //   i++;
-// //   i += 2;
-// //   if (i !== 0) {
-// //     i++;
-// //     var k = i;
-// //     k++;
-// //   }
-// // }
 var UglifyJS = exports;
 
 (function(MOZ_SourceMap,exports
@@ -2823,7 +2794,9 @@ var UglifyJS = exports;
                         [].push.apply(ex.end.comments_after, end.comments_after);
                         end.comments_after = ex.end.comments_after;
                         ex.end = end;
-                        if (ex instanceof AST_Call) mark_pure(ex);
+                        if (ex instanceof AST_Call) {
+                            mark_pure(ex);
+                        }
                         return subscripts(ex, allow_calls);
                     case "[":
                         return subscripts(array_(), allow_calls);

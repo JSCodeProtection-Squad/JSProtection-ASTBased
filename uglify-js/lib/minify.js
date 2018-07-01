@@ -16,6 +16,12 @@ function read_source_map(code) {
   return to_ascii(match[2]);
 }
 
+/**
+ * 将name配置项添加到keys的子配置中
+ * @param {string} name 需要添加的配置项
+ * @param {Dictionary} options 配置
+ * @param {Array} keys 目标配置项列表
+ */
 function set_shorthand(name, options, keys) {
   if (options[name]) {
     keys.forEach(function (key) {
@@ -481,6 +487,13 @@ function minify(fs, files, options) {
       start: Date.now()
     };
     if (options.rename === undefined) {
+      // 逻辑与，expr1 && expr2，如果expr1 能转换成false则返回expr1，否则返回expr2。
+      // 能够转换为false的表达式有：
+      // null；
+      // NaN；
+      // 0；
+      // 空字符串（""）；
+      // undefined。
       options.rename = options.compress && options.mangle;
     }
     set_shorthand("ie8", options, ["compress", "mangle", "output"]);
