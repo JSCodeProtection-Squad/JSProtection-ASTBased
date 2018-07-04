@@ -278,6 +278,11 @@ var UglifyJS = exports;
         return new Function("str", f);
     };
 
+    /**
+     * 检测array中的每一个元素是否都满足predicate的判断方法
+     * @param {*} array
+     * @param {*} predicate 判断方法
+     */
     function all(array, predicate) {
         for (var i = array.length; --i >= 0;)
             if (!predicate(array[i]))
@@ -1533,6 +1538,13 @@ var UglifyJS = exports;
         throw new JS_Parse_Error(message, filename, line, col, pos);
     };
 
+    /**
+     * 判断token的类型和值
+     * @param {AST_Token} token 需要判断的token
+     * @param {string} type token 类型
+     * @param {string} val token 值
+     * @returns boolean
+     */
     function is_token(token, type, val) {
         return token.type == type && (val == null || token.value == val);
     };
@@ -1562,7 +1574,9 @@ var UglifyJS = exports;
             // 需要有标志位标记是否读取正则的token
             regex_allowed   : false,
             comments_before : [],
+            // 指示字符串字典，记录每个指示字符串出现的次数
             directives      : {},
+            // 指示字符串栈，每个栈帧保存一个作用域内的所有指示字符串
             directive_stack : []
         };
 
@@ -1665,6 +1679,7 @@ var UglifyJS = exports;
          */
         function token(type, value, is_comment) {
             // 判断是否允许正则表达式
+            // 根据当前解析得到的token类型，判断之后的解析过程中是否允许匹配正则表达式
             S.regex_allowed = ((type == "operator" && !UNARY_POSTFIX(value)) ||
                 (type == "keyword" && KEYWORDS_BEFORE_EXPRESSION(value)) ||
                 (type == "punc" && PUNC_BEFORE_EXPRESSION(value)));
@@ -1923,8 +1938,14 @@ var UglifyJS = exports;
             return name;
         };
 
+        /**
+         * 解析正则表达式
+         * 如果在匹配到下一个 "/" 之前，出现换行则抛出异常
+         * @returns 返回一个 regexp 类型的token，value为一个正则表达式对象
+         */
         var read_regexp = with_eof_error("Unterminated regular expression", function(source) {
             var prev_backslash = false, ch, in_class = false;
+            // 解析到下一个"/"时，结束循环
             while ((ch = next(true))) if (NEWLINE_CHARS(ch)) {
                 parse_error("Unexpected line terminator");
             } else if (prev_backslash) {
@@ -1943,7 +1964,10 @@ var UglifyJS = exports;
             } else {
                 source += ch;
             }
+            // 正则表达式最后可以包含一个标识符g,i,m,u,y
             var mods = read_name();
+            // 尝试根据解析的正则表达文本source和匹配模式标识符flag
+            // 创建正则表达式对象
             try {
                 var regexp = new RegExp(source, mods);
                 regexp.raw_source = source;
@@ -1953,14 +1977,19 @@ var UglifyJS = exports;
             }
         });
 
+        /**
+         * 解析操作符
+         * @param {string} prefix 操作符前缀
+         */
         function read_operator(prefix) {
             function grow(op) {
+                // 如果没有多余字符，解析结束
                 if (!peek()) return op;
                 var bigger = op + peek();
-                if (OPERATORS(bigger)) {
+                if (OPERATORS(bigger)) { // 如果加上新的字符依旧符合操作符条件，继续解析
                     next();
                     return grow(bigger);
-                } else {
+                } else {    // 如果加上新字符不符合，返回之前的op
                     return op;
                 }
             };
@@ -1985,6 +2014,7 @@ var UglifyJS = exports;
                     next();
                     return skip_multiline_comment();
             }
+            //
             // 不是注释，则尝试正则匹配或者操作符
             return S.regex_allowed ? read_regexp("") : read_operator("/");
         };
@@ -2033,6 +2063,7 @@ var UglifyJS = exports;
 
         /**
          * 获取下一个token
+         * 注释会被忽略掉，不生成token
          * @param {*} force_regexp
          */
         function next_token(force_regexp) {
@@ -2099,6 +2130,11 @@ var UglifyJS = exports;
             return S;
         };
 
+        /**
+         * 添加指示字符串directive到directive_stack栈顶栈帧中
+         * 同时，将directives字典更新，将对应指示字符串的数目增1
+         * @param {string} directive 指示字符串
+         */
         next_token.add_directive = function(directive) {
             S.directive_stack[S.directive_stack.length - 1].push(directive);
 
@@ -2109,6 +2145,9 @@ var UglifyJS = exports;
             }
         }
 
+        /**
+         * 添加一个指示字符串栈帧，用于保存当前作用域内的所有指示字符串
+         */
         next_token.push_directives_stack = function() {
             S.directive_stack.push([]);
         }
@@ -2123,6 +2162,10 @@ var UglifyJS = exports;
             S.directive_stack.pop();
         }
 
+        /**
+         * 检索directives字典中是否存在directive指示字符串
+         * @param {string} directive 指示字符串
+         */
         next_token.has_directive = function(directive) {
             return S.directives[directive] > 0;
         }
@@ -2200,7 +2243,7 @@ var UglifyJS = exports;
             // 上一个token
             prev          : null,
             // 向前看一个token
-            peeked        : null,
+            peeked        : null,   // 只有peek()函数会更新该值
             // 函数嵌套层数
             in_function   : 0,
             // 在函数里边标记"use strict"这种指示性字符串
@@ -2213,14 +2256,29 @@ var UglifyJS = exports;
 
         S.token = next();
 
+        /**
+         * 判断当前的token是否为type类型，值为value
+         * @param {string} type token 类型
+         * @param {string} value token 值
+         * @returns boolean
+         */
         function is(type, value) {
             return is_token(S.token, type, value);
         };
 
+        /**
+         * 解析一个token
+         * 如果S.peeked为NULL，向前解析一个token，否则直接返回S.peeked
+         * 不会更新S.token，但是可能会更新S.peeked
+         * @returns 返回S.peeked
+         */
         function peek() { return S.peeked || (S.peeked = S.input()); };
 
         /**
          * 获取下一个token
+         * 会直接更新S.token，同时将其返回
+         * 同时，该函数始终保证S.peeked为null
+         * @returns 返回S.token
          */
         function next() {
             S.prev = S.token;
@@ -2236,6 +2294,10 @@ var UglifyJS = exports;
             return S.token;
         };
 
+        /**
+         * 返回前一个token
+         * @returns AST_Token
+         */
         function prev() {
             return S.prev;
         };
@@ -2259,6 +2321,12 @@ var UglifyJS = exports;
             token_error(token, "Unexpected token: " + token.type + " (" + token.value + ")");
         };
 
+        /**
+         * 判断当前token是否是指定token
+         * 如果不是抛出异常，否则，返回下一个token
+         * @param {string} type token类型
+         * @param {token} val token值
+         */
         function expect_token(type, val) {
             if (is(type, val)) {
                 return next();
@@ -2266,19 +2334,40 @@ var UglifyJS = exports;
             token_error(S.token, "Unexpected token " + S.token.type + " «" + S.token.value + "»" + ", expected " + type + " «" + val + "»");
         };
 
+        /**
+         * 判断是否是指定的标点token，如果是返回下一个token
+         * 若不是，抛出异常
+         * @param {token} punc 标点token
+         */
         function expect(punc) { return expect_token("punc", punc); };
 
+        /**
+         * 判断该token之前是否存在换行
+         * 当token之前有一个换行，或者token之前的所有注释至少有一个注释
+         * 有换行时，返回true
+         * @param {token} token 一个词法单元
+         */
         function has_newline_before(token) {
             return token.nlb || !all(token.comments_before, function(comment) {
                 return !comment.nlb;
             });
         }
 
+        /**
+         * 判断语句之后是否可以插入一个分号
+         * 如果语句之后为文件结束，或者是一个大括号“}”，
+         * 抑或者下一个token之前有换行（即语句之后换行）
+         */
         function can_insert_semicolon() {
             return !options.strict
                 && (is("eof") || is("punc", "}") || has_newline_before(S.token));
         };
 
+        /**
+         * 判断语句之后有没有分号，如果没有分号，并且
+         * 分号是必须的，抛出异常
+         * @param {boolean} optional 分号是否是可选的
+         */
         function semicolon(optional) {
             if (is("punc", ";")) next();
             else if (!optional && !can_insert_semicolon()) unexpected();
@@ -2302,9 +2391,19 @@ var UglifyJS = exports;
             };
         };
 
+        /**
+         * 如果当前token为 "/" 或者 "/="
+         * 则强制解析正则表达式
+         * 得到的正则表达式token 的value是RegExp对象，其中包含了已经
+         * 解析得到的"/"或者"/="中，且这两个应该不属于"operator”Token
+         * 所以不用加入到AST中
+         * 此外，该方法直接更新S.token，将解析得到的token更新到当前取得的token
+         */
         function handle_regexp() {
             if (is("operator", "/") || is("operator", "/=")) {
                 S.peeked = null;
+                // 空字符串 ""!= null 为 true
+                // 强制解析正则表达式
                 S.token = S.input(S.token.value.substr(1)); // force regexp
             }
         };
@@ -2312,14 +2411,17 @@ var UglifyJS = exports;
         var statement = embed_tokens(function() {
             handle_regexp();
             switch (S.token.type) {
+                // 处理字符串类型token
                 case "string":
-                    if (S.in_directives) {
+                    if (S.in_directives) {  // 如果是指示性字符串
                         var token = peek();
+                        // 指示性字符串中没有 "\"
                         if (S.token.raw.indexOf("\\") == -1
                             && (is_token(token, "punc", ";")
                                 || is_token(token, "punc", "}")
                                 || has_newline_before(token)
                                 || is_token(token, "eof"))) {
+                            // 将指示性字符串添加到词法分析器中的栈中
                             S.input.add_directive(S.token.value);
                         } else {
                             S.in_directives = false;
@@ -2334,7 +2436,7 @@ var UglifyJS = exports;
                     return simple_statement();
 
                 case "name":
-                    return is_token(peek(), "punc", ":")
+                    return is_token(peek(), "punc", ":") // 如果是冒号“：”，则是一个标签语句
                         ? labeled_statement()
                         : simple_statement();
 
@@ -2438,6 +2540,7 @@ var UglifyJS = exports;
                             next();
                             return try_();
 
+                        // 解析变量定义语句
                         case "var":
                             next();
                             var node = var_();
@@ -2486,7 +2589,13 @@ var UglifyJS = exports;
             return new AST_LabeledStatement({ body: stat, label: label });
         };
 
+        /**
+         * 解析一个表达式语句
+         * 类似 a = 1 + 2
+         * @param {*} tmp
+         */
         function simple_statement(tmp) {
+            // 先解析表达式expression，然后是判断分号
             return new AST_SimpleStatement({ body: (tmp = expression(true), semicolon(), tmp) });
         };
 
@@ -2765,20 +2874,31 @@ var UglifyJS = exports;
             return ret;
         };
 
+        /**
+         * 原子表达式
+         */
         var expr_atom = function(allow_calls) {
+            // 判断是否是new表达式
             if (is("operator", "new")) {
                 return new_(allow_calls);
             }
             var start = S.token;
+            // 如果是标点
             if (is("punc")) {
                 switch (start.value) {
+                    // 括号表达式
                     case "(":
                         next();
+                        // 括号内的表达式
                         var ex = expression(true);
                         var len = start.comments_before.length;
+                        // 括号内表达式中的注释，添加到整个括号达式的注释中
                         [].unshift.apply(ex.start.comments_before, start.comments_before);
                         start.comments_before = ex.start.comments_before;
                         start.comments_before_length = len;
+                        // 如果左括号前面没有注释，且内部表达式中第一个注释之前没有换行
+                        // 则将左括号前是否换行设置为false
+                        // 括号内部表达式的第一个注释之前是否有换行设置右括号之前是否有换行
                         if (len == 0 && start.comments_before.length > 0) {
                             var comment = start.comments_before[0];
                             if (!comment.nlb) {
@@ -2786,17 +2906,25 @@ var UglifyJS = exports;
                                 start.nlb = false;
                             }
                         }
+                        //  左括号之后的注释设置为内部表达式之后的注释
                         start.comments_after = ex.start.comments_after;
+                        // 内部表达式的开始设置为函数名
                         ex.start = start;
+                        // 匹配一个右括号，匹配不到则整个括号表达式不正确，抛出异常
                         expect(")");
+                        // 表达式的结束为右括号
                         var end = prev();
+                        // 右括号之前注释为内部表达式最后一个token
+                        // 之前的注释
                         end.comments_before = ex.end.comments_before;
+                        // 将内部表达式最后一个token之后的注释添加到
+                        // 右括号之后的注释中
                         [].push.apply(ex.end.comments_after, end.comments_after);
                         end.comments_after = ex.end.comments_after;
                         ex.end = end;
-                        if (ex instanceof AST_Call) {
-                            mark_pure(ex);
-                        }
+                        // 内部表达式的结束设置为右括号
+                        // 这样，整个内表达式变量代表整个括号表达式
+                        if (ex instanceof AST_Call) mark_pure(ex);
                         return subscripts(ex, allow_calls);
                     case "[":
                         return subscripts(array_(), allow_calls);
@@ -2993,11 +3121,17 @@ var UglifyJS = exports;
             return expr;
         };
 
+        /**
+         * 一元表达式解析
+         * @param {*} allow_calls
+         */
         var maybe_unary = function(allow_calls) {
             var start = S.token;
+            //  如果当前token是操作符，并且是一元表达式前缀
             if (is("operator") && UNARY_PREFIX(start.value)) {
                 next();
                 handle_regexp();
+                // 递归解析一元表达式
                 var ex = make_unary(AST_UnaryPrefix, start, maybe_unary(allow_calls));
                 ex.start = start;
                 ex.end = prev();
@@ -3051,6 +3185,10 @@ var UglifyJS = exports;
             return expr_op(maybe_unary(true), 0, no_in);
         };
 
+        /**
+         * 条件表达式解析
+         * @param {*} no_in
+         */
         var maybe_conditional = function(no_in) {
             var start = S.token;
             var expr = expr_ops(no_in);
@@ -3073,6 +3211,10 @@ var UglifyJS = exports;
             return expr instanceof AST_PropAccess || expr instanceof AST_SymbolRef;
         };
 
+        /**
+         * 赋值表达式解析
+         * @param {*} no_in
+         */
         var maybe_assign = function(no_in) {
             var start = S.token;
             var left = maybe_conditional(no_in), val = S.token.value;
@@ -3092,6 +3234,11 @@ var UglifyJS = exports;
             return left;
         };
 
+        /**
+         * 表达式解析
+         * @param {*} commas
+         * @param {*} no_in
+         */
         var expression = function(commas, no_in) {
             var start = S.token;
             var exprs = [];
@@ -3123,6 +3270,7 @@ var UglifyJS = exports;
             // 在前面已经调用next()函数解析第一个token
             var start = S.token;
             var body = [];
+            // 解析完第一个token后添加一个指示字符串栈帧
             S.input.push_directives_stack();
             while (!is("eof"))
                 body.push(statement());
@@ -11810,17 +11958,6 @@ var UglifyJS = exports;
         };
     }
 
-// function deepCopyAST(obj, obj_type) {
-//   var return_obj = new obj_type();
-//   for (var name in obj) {
-//     if (typeof obj[name] == 'undefined' || obj[name] === null || typeof obj[name] != 'object') {
-//       return_obj[name] = obj[name];
-//     } else {
-//       return_obj[name] = deepCopyAST(obj[name], obj[name].constructor);
-//     }
-//   }
-//   return return_obj;
-// }
 
     function changeAST_NodeAssign(obj, value) {
         obj.end.raw = value.toString();
@@ -11831,343 +11968,33 @@ var UglifyJS = exports;
         return obj;
     }
 
-    function createWhileCase() {
-        return new AST_Case({
-            end: new AST_Token({
-                raw: undefined,
-                file: null,
-                comments_after: [],
-                comments_before: [],
-                nlb: false,
-                value: ';',
-                type: 'punc'
-            }),
-            start: new AST_Token({
-                raw: undefined,
-                file: null,
-                comments_after: [],
-                comments_before: [],
-                nlb: true,
-                value: 'case',
-                type: 'keyword'
-            }),
-            body: [
-                new AST_StatementWithBody({
-                    end: new AST_Token({
-                        raw: undefined,
-                        file: null,
-                        comments_after: [],
-                        comments_before: [],
-                        nlb: false,
-                        value: ';',
-                        type: 'punc'
-                    }),
-                    start: new AST_Token({
-                        raw: undefined,
-                        file: null,
-                        comments_after: [],
-                        comments_before: [],
-                        nlb: true,
-                        value: 'next',
-                        type: 'name'
-                    }),
-                    body: new AST_Assign({
-                        end: new AST_Token({
-                            raw: '1',
-                            file: null,
-                            comments_after: [],
-                            comments_before: [],
-                            nlb: false,
-                            value: 1,
-                            type: 'num'
-                        }),
-                        start: new AST_Token({
-                            raw: undefined,
-                            file: null,
-                            comments_after: [],
-                            comments_before: [],
-                            nlb: true,
-                            value: 'next',
-                            type: 'name'
-                        }),
-                        right: new AST_Number({
-                            end: new AST_Token({
-                                raw: '1',
-                                file: null,
-                                comments_after: [],
-                                comments_before: [],
-                                nlb: false,
-                                value: 1,
-                                type: 'num'
-                            }),
-                            start: new AST_Token({
-                                raw: '1',
-                                file: null,
-                                comments_after: [],
-                                comments_before: [],
-                                nlb: false,
-                                value: 1,
-                                type: 'num'
-                            }),
-                            value: 1
-                        }),
-                        left: new AST_Symbol({
-                            end: new AST_Token({
-                                raw: undefined,
-                                file: null,
-                                comments_after: [],
-                                comments_before: [],
-                                nlb: true,
-                                value: 'next',
-                                type: 'name'
-                            }),
-                            start: new AST_Token({
-                                raw: undefined,
-                                file: null,
-                                comments_after: [],
-                                comments_before: [],
-                                nlb: true,
-                                value: 'next',
-                                type: 'name'
-                            }),
-                            name: 'next'
-                        }),
-                        operator: '='
-                    })
-                }),
-                new AST_Break({
-                    end: new AST_Token({
-                        raw: undefined,
-                        file: null,
-                        comments_after: [],
-                        comments_before: [],
-                        nlb: false,
-                        value: ';',
-                        type: 'punc'
-                    }),
-                    start: new AST_Token({
-                        raw: undefined,
-                        file: null,
-                        comments_after: [],
-                        comments_before: [],
-                        nlb: true,
-                        value: 'break',
-                        type: 'keyword'
-                    }),
-                    label: null
-                })
-            ],
-            expression: new AST_Number({
-                end: new AST_Token({
-                    raw: '1',
-                    file: null,
-                    comments_after: [],
-                    comments_before: [],
-                    nlb: false,
-                    value: 1,
-                    type: 'num'
-                }),
-                start: new AST_Token({
-                    raw: '1',
-                    file: null,
-                    comments_after: [],
-                    comments_before: [],
-                    nlb: false,
-                    value: 1,
-                    type: 'num'
-                }),
-                value: 1
-            })
-        });
-    }
-
-    function createFunctionCase() {
-        return new AST_Case({
-            end: new AST_Token({
-                raw: undefined,
-                file: null,
-                comments_after: [],
-                comments_before: [],
-                nlb: false,
-                value: ';',
-                type: 'punc'
-            }),
-            start: new AST_Token({
-                raw: undefined,
-                file: null,
-                comments_after: [],
-                comments_before: [],
-                nlb: true,
-                value: 'case',
-                type: 'keyword'
-            }),
-            body: [
-                new AST_StatementWithBody({
-                    end: new AST_Token({
-                        raw: undefined,
-                        file: null,
-                        comments_after: [],
-                        comments_before: [],
-                        nlb: false,
-                        value: ';',
-                        type: 'punc'
-                    }),
-                    start: new AST_Token({
-                        raw: undefined,
-                        file: null,
-                        comments_after: [],
-                        comments_before: [],
-                        nlb: true,
-                        value: 'this',
-                        type: 'name'
-                    }),
-                    body: new AST_Assign({
-                        end: new AST_Token({
-                            raw: '1',
-                            file: null,
-                            comments_after: [],
-                            comments_before: [],
-                            nlb: false,
-                            value: 1,
-                            type: 'num'
-                        }),
-                        start: new AST_Token({
-                            raw: undefined,
-                            file: null,
-                            comments_after: [],
-                            comments_before: [],
-                            nlb: true,
-                            value: 'this',
-                            type: 'name'
-                        }),
-                        right: new AST_Number({
-                            end: new AST_Token({
-                                raw: '1',
-                                file: null,
-                                comments_after: [],
-                                comments_before: [],
-                                nlb: false,
-                                value: 1,
-                                type: 'num'
-                            }),
-                            start: new AST_Token({
-                                raw: '1',
-                                file: null,
-                                comments_after: [],
-                                comments_before: [],
-                                nlb: false,
-                                value: 1,
-                                type: 'num'
-                            }),
-                            value: 1
-                        }),
-                        left: new AST_PropAccess({
-                            end: new AST_Token({
-                                file: null,
-                                comments_after: [],
-                                comments_before: [],
-                                nlb: false,
-                                value: 'next',
-                                type: 'name'
-                            }),
-                            start: new AST_Token({
-                                file: null,
-                                comments_after: [],
-                                comments_before: [],
-                                nlb: true,
-                                value: 'this',
-                                type: 'name'
-                            }),
-                            property: 'next',
-                            expression: new AST_Symbol({
-                                end: new AST_Token({
-                                    file: null,
-                                    comments_after: [],
-                                    comments_before: [],
-                                    nlb: true,
-                                    value: 'this',
-                                    type: 'name'
-                                }),
-                                start: new AST_Token({
-                                    file: null,
-                                    comments_after: [],
-                                    comments_before: [],
-                                    nlb: true,
-                                    value: 'this',
-                                    type: 'name'
-                                }),
-                                name: 'this'
-                            })
-                        }),
-                        operator: '='
-                    })
-                }),
-                new AST_Break({
-                    end: new AST_Token({
-                        raw: undefined,
-                        file: null,
-                        comments_after: [],
-                        comments_before: [],
-                        nlb: false,
-                        value: ';',
-                        type: 'punc'
-                    }),
-                    start: new AST_Token({
-                        raw: undefined,
-                        file: null,
-                        comments_after: [],
-                        comments_before: [],
-                        nlb: true,
-                        value: 'break',
-                        type: 'keyword'
-                    }),
-                    label: null
-                })
-            ],
-            expression: new AST_Number({
-                end: new AST_Token({
-                    raw: '1',
-                    file: null,
-                    comments_after: [],
-                    comments_before: [],
-                    nlb: false,
-                    value: 1,
-                    type: 'num'
-                }),
-                start: new AST_Token({
-                    raw: '1',
-                    file: null,
-                    comments_after: [],
-                    comments_before: [],
-                    nlb: false,
-                    value: 1,
-                    type: 'num'
-                }),
-                value: 1
-            })
-        });
-    }
-
     function whileFlatten(fs, while_item) {
+        // 读取压扁控制流模板文件，通过修改模板文件的AST得到目标
         var code = fs.readFileSync('./template/while.js', 'utf8');
         var result = parse(code).body[0];
+        // while循环内的代码块数目
         var length = while_item.body.body.length + 1;
-
+        // 模板文件的if判断条件
         var if_ast_condition = result.body.body[0].condition;
+        // 修改判断条件为代码块数目
         if_ast_condition.right = changeAST_NodeAssign(if_ast_condition.right, length)
-
+        // 模板文件中witch语句
         var switch_ast = result.body.body[1];
+        // 模板文件switch语句中的if条件替换为while循环的条件
         switch_ast.body[0].body[0].condition = while_item.condition;
-
+        // 模板文件中，case 0中if语句的else语句节点
         var first_if_final = switch_ast.body[0].body[0].alternative.body[0].body;
+        // 修改else中赋值语句的右值，即是根据while更新next赋值语句
         first_if_final.end.raw = length.toString();
         first_if_final.end.value = length;
         first_if_final.right = changeAST_NodeAssign(first_if_final.right, length);
 
+        var case_template = switch_ast.body.pop();
+        //为while循环的每个语句块创建case节点
         while_item.body.body.forEach(function (while_body, index) {
             //创建新的case节点，否则会遭遇deep clone问题，比较蛋疼
 
-            var temp = createWhileCase();
+            var temp = case_template.clone(true);
             temp.expression = changeAST_NodeAssign(temp.expression, 1 + index);
 
             var num = 2 + index;
@@ -12187,29 +12014,39 @@ var UglifyJS = exports;
     }
 
     function functionFlatten(fs, function_item) {
+        // 读取模板文件生成模板AST
         var code = fs.readFileSync('./template/function.js', 'utf8');
         var result = parse(code).body[0];
-
+        // 变量定义语句
         var definitions = result.definitions[0];
+        // 定义语句以变量名作为开始，这里将函数名赋值给变量名
         definitions.start.value = function_item.name.name;
+
+        // 更新变量定义语句中的变量名token
         definitions.name.end.value = function_item.name.name;
         definitions.name.start.value = function_item.name.name;
         definitions.name.name = function_item.name.name;
 
+        // 函数头以及函数体
         var func = definitions.value;
+        // 更新模板中函数参数
         func.argnames = function_item.argnames;
-        //for循环
+        // 模板中函数体内for循环
         var func_body = func.body[1];
         var length = function_item.body.length + 1;
 
+        // for循环内if语句判断条件
         var if_ast_condition = func_body.body.body[0].condition;
+        // 修改判断条件右操作数为函数体中的语句数目
         if_ast_condition.right = changeAST_NodeAssign(if_ast_condition.right, length);
 
+        // 模板中的switch语句块
         var switch_ast = func_body.body.body[1];
+
         function_item.body.forEach(function (function_body, index) {
             //创建新的case节点，否则会遭遇deep clone问题，比较蛋疼
 
-            var temp = createWhileCase();
+            var temp = switch_ast.body[0].clone(true);
             temp.expression = changeAST_NodeAssign(temp.expression, 1 + index);
 
             var num = 2 + index;
