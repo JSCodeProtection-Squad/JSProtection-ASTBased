@@ -14,6 +14,7 @@ var FILES = UglifyJS.FILES = [
     "../lib/propmangle.js",
     "../lib/minify.js",
     "../lib/flatten.js",
+    "../lib/opaque.js",
     "./exports.js",
 ].map(function(file){
     // 返回所有模块的绝对路径
