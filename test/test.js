@@ -1,8 +1,11 @@
 function test(test1, test2) {
   var temp = test1;
   var t = test2;
+  function f(test) {
+      return test;
+  }
 
-  return temp ? t : t - 1;
+  return f(temp) ? f(t) : f(t - 1);
 }
 var i = 0;
 while (i < 10) {
@@ -13,7 +16,12 @@ while (i < 10) {
     var j = i;
     j++;
   }
-  console.log(i)
+  console.log(i);
+    var t = 0;
+    while (t<5){
+      t++;
+      console.log(t);
+    }
 }
 console.log(1 ,2);
 
